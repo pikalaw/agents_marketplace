@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Agent Maker</title>
+    <style>
+      h1 {
+        color: red;
+      }
+      p {
+        color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="response"></div>
+  </body>
+  <script>
+    (async () => {
+      const runMacroEndpointUrl =
+        "https://api-dot-macromaker.googleplex.com/run-macro";
+
+      function participatingAgentNames() {
+        return "";
+      }
+
+      function participatingAgentDescriptions() {
+        return "";
+      }
+
+      class Agent {
+        /**
+         * ID of the macro.
+         * @type {string}
+         */
+        macroId = "";
+
+        /**
+         * Name of the agent.
+         * @type {string}
+         */
+        name = "NoName";
+
+        /**
+         * Self introduction of the agent's capabilities.
+         * @type {string}
+         */
+        selfIntroduction = "I can do nothing. Do not ask me anything.";
+
+        /**
+         * Ongoing discussion.
+         * ID of the macro.
+         * @type {string}
+         */
+        #ongoingDiscussion = "";
+
+        /**
+         * @param {string} macroId - ID of the macro
+         */
+        constructor({ macroId }) {
+          this.macroId = macroId;
+        }
+
+        /**
+         * @param {string} user User ID of the sender
+         * @param {string} request message of the user
+         * @returns {string | undefined} the next message
+         */
+        async accepts({ user, request, temperature = 0.7 }) {
+          const inputKey = {
+            ongoing_discussion: "14",
+            user: "12",
+            request: "2",
+          };
+          const userInputs = {
+            [inputKey.user]: user,
+            [inputKey.request]: request,
+            [inputKey.ongoing_discussion]: this.#ongoingDiscussion,
+          };
+
+          const formData = new FormData();
+          formData.append("id", this.macroId);
+          formData.append("userInputs", JSON.stringify(userInputs));
+          formData.append("temperature", temperature);
+
+          const response = await fetch(runMacroEndpointUrl, {
+            credentials: "include",
+            method: "POST",
+            body: formData,
+          }).then((res) => res.json());
+
+          console.log(response);
+
+          const bestResponse = response.messages[0].text;
+          const noHallucinationResponse = bestResponse.replace(
+            /[\n\r\s]*\{FROM:.*/,
+            ""
+          );
+          this.#ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
+          this.#ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
+
+          const matchResult = noHallucinationResponse.match(/\{SEND\}: (.*)/);
+          if (!matchResult) return undefined;
+          return matchResult[1];
+        }
+      }
+
+      const agentBob = new Agent({ macroId: "pxdS6zCRJnMGhe2nYaPJ" });
+      const message = await agentBob.accepts({
+        user: "Lawrence",
+        request: "What can you do?",
+      });
+
+      const responseDiv = document.getElementById("response");
+      responseDiv.innerText = message;
+    })();
+  </script>
+</html>
