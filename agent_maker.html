@@ -18,7 +18,13 @@
       <ul class="messages"></ul>
     </section>
     <section class="user-prompt-section">
-      <textarea class="user-prompt" name="user-prompt" rows="4" cols="50" placeholder="@agent Your request"></textarea>
+      <textarea
+        class="user-prompt"
+        name="user-prompt"
+        rows="4"
+        cols="50"
+        placeholder="@agent Your request"
+      ></textarea>
     </section>
     <div id="debug"></div>
   </body>
@@ -52,6 +58,69 @@
       }
 
       class Agent {
+        /**
+         * Prompt mechanism for a cooperative agent.
+         * @type {string}
+         */
+        static cooperativeAgentPrompt = `
+A user will ask you for something. You will break down the request into multiple steps and take one step at a time.
+
+If you already have the answer, you can return the answer to the user.
+
+{FROM:User's name}: What is meaning of life?
+{THOUGHT}: I know the answer already! I will tell the user.
+{SEND}: @User's name The meaning of life is 42.
+
+If you do not have the answer, you can send a message to ask some helpers.
+
+{FROM:User's name}: What is the sum of 5 and 7?
+{THOUGHT}: I cannot answer that question, but I can ask a helper.
+{SEND}: @Helper's name What is the sum of 5 and 7?
+{FROM:Helper's name}: The sum of 5 and 7 is 12.
+{THOUGHT}: I have the answer now. I will tell the user.
+{SEND}: @User's name I have the answer! It is 12.
+
+You can ask multiple helpers.
+
+{FROM:User's name}: What is the age difference in lifespan between Abraham Lincoln and George Washington?
+{THOUGHT}: I need to know Abraham Lincoln's and George Washington's ages first. Helper 1 knows people's ages. I will ask him.
+{SEND}: @Helper 1 What are Abraham Lincoln's and George Washington's ages?
+{FROM:Helper 1}: I cannot answer that question. You have to ask for one person's age at a time.
+{THOUGHT}: I will ask Helper 1 again, but ask only for one person's age at a time.
+{SEND} @Helper 1 What is Abraham Lincoln's age?
+{FROM:Helper 1}: Abraham Lincoln's age is 72.
+{THOUGHT}: I know Abraham Lincoln's age now, but I need to know George Washington's age too.
+{SEND} @Helper 1 What is George Washington's age?
+{FROM:Helper 1}: George Washington's age is 62.
+{THOUGHT}: I know both Abraham Lincoln's and George Washington's ages. I need to do substraction. Helper 2 knows arithmetic. I will ask him.
+{SEND}: @Helper 2 What is the difference between 62 and 72?
+{FROM:Helper 2}: The difference is 10.
+{THOUGHT}: I know the answer now! I will tell the User.
+{SEND}: @User's name The age difference between Abraham Lincoln and George Washington is 10.
+
+If someone ask your name, just say your name.
+
+{FROM:User's name}: What is your name?
+{THOUGHT}: I will tell the user my name. I will use just my name in the reply. I will not say, "I am" or "My name is".
+{SEND}: @User's name Name.
+
+If someone ask what you can do, give a short summary of what you can do.
+
+{FROM:User's name}: What can you do?
+{THOUGHT}: I will give a succinct summary of what I am capable of.
+{SEND}: @User's name Your summary here.
+
+You have the following list of helpers. Do not ask any other helper who is not in the list below! However, you can ask the same helper multiple times.
+
+Sally is a helper. Here is his or her self introduction: "I know math and arithmetic."
+
+Tom is a helper. Here is his or her self introduction: "I know the length of a bus is 10 feet. He also knows the length of a car is 7 feet."
+
+Wendy is a helper. Here is his or her self introduction: "I know celebrity's ages. However, you can ask me one celebrity at a time."
+
+Now, start helping!
+`;
+
         /**
          * ID of the macro.
          * @type {string}
@@ -116,14 +185,16 @@
          */
         async accepts({ user, request, temperature = 0.7 }) {
           const inputKey = {
-            ongoing_discussion: "14",
-            user: "12",
-            request: "2",
+            cooperative_agent_prompt: "19",
+            ongoing_discussion: "15",
+            user: "16",
+            request: "17",
           };
           const userInputs = {
             [inputKey.user]: user,
             [inputKey.request]: request,
             [inputKey.ongoing_discussion]: this.ongoingDiscussion,
+            [inputKey.cooperative_agent_prompt]: Agent.cooperativeAgentPrompt,
           };
 
           const formData = new FormData();
@@ -131,26 +202,28 @@
           formData.append("userInputs", JSON.stringify(userInputs));
           formData.append("temperature", temperature);
 
-          const response = await fetch(runMacroEndpointUrl, {
-            credentials: "include",
-            method: "POST",
-            body: formData,
-          }).then((res) => res.json());
+          for (let i = 0; i < 5; i++) {
+            const response = await fetch(runMacroEndpointUrl, {
+              credentials: "include",
+              method: "POST",
+              body: formData,
+            }).then((res) => res.json());
 
-          console.log(`${user}: ${request}\nResponse:`);
-          console.log(response);
+            console.log(`${user}: ${request}\nResponse:`);
+            console.log(response);
 
-          for (let message of response.messages) {
-            const bestResponse = message.text;
-            const noHallucinationResponse = bestResponse.replace(
-              /[\n\r\s]*\{FROM:.*/,
-              ""
-            );
-            this.ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
-            this.ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
+            for (let message of response.messages) {
+              const bestResponse = message.text;
+              const noHallucinationResponse = bestResponse.replace(
+                /[\n\r\s]*\{FROM:.*/,
+                ""
+              );
+              this.ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
+              this.ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
 
-            const match = noHallucinationResponse.match(/\{SEND\}: (.*)/);
-            if (match) return match[1];
+              const match = noHallucinationResponse.match(/\{SEND\}: (.*)/);
+              if (match) return match[1];
+            }
           }
           throw new Error(
             "Unable to get agent to return a response with {SEND}."
@@ -158,19 +231,48 @@
         }
       }
 
-      const agentBob = new Agent({ macroId: "pxdS6zCRJnMGhe2nYaPJ" });
-      await agentBob.init();
-      const message = await agentBob.accepts({
+      function htmlToElement(html) {
+        let temp = document.createElement("template");
+        html = html.trim(); // Never return a space text node as a result
+        temp.innerHTML = html;
+        return temp.content.firstChild;
+      }
+
+      class DialogScreen {
+        /**
+         * @param {string} user ID of the sender
+         * @param {string} message of the user
+         */
+        addMessage({ sender, message }) {
+          const li = htmlToElement(
+            `<li class="message-entry">
+              <div class="message-sender">${sender}</div>
+              <div class="message-body">${message}</div>
+            </li>`
+          );
+          const ul = document.querySelector(".messages");
+          ul.append(li);
+        }
+      }
+
+      class AgentDispatcher {
+        /**
+         * @param {string} user ID of the sender
+         * @param {string} message of the user
+         */
+        dispatchMessage({ sender, message }) {}
+      }
+
+      const dialogScreen = new DialogScreen();
+
+      const bob = new Agent({ macroId: "TPaASiYUiPeRJmwTC62d" });
+      await bob.init();
+      const message = await bob.accepts({
         user: "Lawrence",
         request: "What is twice the age of Tom Cruise?",
       });
 
-      const responseDiv = document.getElementById("debug");
-      responseDiv.innerHTML = `
-        <div>${agentBob.name}</div>
-        <div>${agentBob.selfIntroduction}</div>
-        <div>${agentBob.ongoingDiscussion}</div>
-        <div>${message}</div>`;
+      dialogScreen.addMessage({ sender: bob.name, message: message });
     })();
   </script>
 </html>
