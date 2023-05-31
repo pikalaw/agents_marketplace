@@ -2,6 +2,8 @@
 <html lang="en">
   <head>
     <title>Agent Maker</title>
+    <!-- Needed for macromaker API authentication. -->
+    <script src="https://api-dot-macromaker.googleplex.com/empty.js"></script>
     <style>
       h1 {
         color: red;
@@ -12,7 +14,13 @@
     </style>
   </head>
   <body>
-    <div id="response"></div>
+    <section class="dialog-section">
+      <ul class="messages"></ul>
+    </section>
+    <section class="user-prompt-section">
+      <textarea class="user-prompt" name="user-prompt" rows="4" cols="50" placeholder="@agent Your request"></textarea>
+    </section>
+    <div id="debug"></div>
   </body>
   <script>
     (async () => {
@@ -25,6 +33,22 @@
 
       function participatingAgentDescriptions() {
         return "";
+      }
+
+      /**
+       * A message from an agent has the general form of
+       *     @Recipient Message body
+       * This function strips the @Recipient part and return the message body.
+       * @param {string} message is the original message sent from an agent.
+       * @returns {string} just the message body without the recipient
+       * annotation.
+       */
+      function stripRecipientFromMessage(message) {
+        const match = message.match(/@.*?\s*(.*)/);
+        if (!match) {
+          return message;
+        }
+        return match[1];
       }
 
       class Agent {
@@ -51,7 +75,7 @@
          * ID of the macro.
          * @type {string}
          */
-        #ongoingDiscussion = "";
+        ongoingDiscussion = "";
 
         /**
          * @param {string} macroId - ID of the macro
@@ -61,9 +85,34 @@
         }
 
         /**
+         * Initialize some basic agent information so that other agents can
+         * discover this agent.
+         */
+        async init() {
+          const namePromise = this.accepts({
+            user: "SYSTEM",
+            request: "What is your name?",
+            temperature: 0.7,
+          }).then(stripRecipientFromMessage);
+
+          const selfIntroductionPromise = this.accepts({
+            user: "SYSTEM",
+            request: "What can you do?",
+            temperature: 0.7,
+          }).then(stripRecipientFromMessage);
+
+          const { user, selfIntroduction } = await Promise.all([
+            namePromise,
+            selfIntroductionPromise,
+          ]);
+          this.user = user;
+          this.selfIntroduction = selfIntroduction;
+        }
+
+        /**
          * @param {string} user User ID of the sender
          * @param {string} request message of the user
-         * @returns {string | undefined} the next message
+         * @returns {string} the next message
          */
         async accepts({ user, request, temperature = 0.7 }) {
           const inputKey = {
@@ -74,7 +123,7 @@
           const userInputs = {
             [inputKey.user]: user,
             [inputKey.request]: request,
-            [inputKey.ongoing_discussion]: this.#ongoingDiscussion,
+            [inputKey.ongoing_discussion]: this.ongoingDiscussion,
           };
 
           const formData = new FormData();
@@ -88,30 +137,40 @@
             body: formData,
           }).then((res) => res.json());
 
+          console.log(`${user}: ${request}\nResponse:`);
           console.log(response);
 
-          const bestResponse = response.messages[0].text;
-          const noHallucinationResponse = bestResponse.replace(
-            /[\n\r\s]*\{FROM:.*/,
-            ""
-          );
-          this.#ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
-          this.#ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
+          for (let message of response.messages) {
+            const bestResponse = message.text;
+            const noHallucinationResponse = bestResponse.replace(
+              /[\n\r\s]*\{FROM:.*/,
+              ""
+            );
+            this.ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
+            this.ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
 
-          const matchResult = noHallucinationResponse.match(/\{SEND\}: (.*)/);
-          if (!matchResult) return undefined;
-          return matchResult[1];
+            const match = noHallucinationResponse.match(/\{SEND\}: (.*)/);
+            if (match) return match[1];
+          }
+          throw new Error(
+            "Unable to get agent to return a response with {SEND}."
+          );
         }
       }
 
       const agentBob = new Agent({ macroId: "pxdS6zCRJnMGhe2nYaPJ" });
+      await agentBob.init();
       const message = await agentBob.accepts({
         user: "Lawrence",
-        request: "What can you do?",
+        request: "What is twice the age of Tom Cruise?",
       });
 
-      const responseDiv = document.getElementById("response");
-      responseDiv.innerText = message;
+      const responseDiv = document.getElementById("debug");
+      responseDiv.innerHTML = `
+        <div>${agentBob.name}</div>
+        <div>${agentBob.selfIntroduction}</div>
+        <div>${agentBob.ongoingDiscussion}</div>
+        <div>${message}</div>`;
     })();
   </script>
 </html>
