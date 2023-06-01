@@ -2,9 +2,8 @@
 <html lang="en">
   <head>
     <title>Agent Maker</title>
-    <!-- Needed for macromaker API authentication.
-    <script src="https://api-dot-macromaker.googleplex.com/empty.js"></script>
-    -->
+    <!-- Needed for macromaker API authentication. -->
+    <script src="https://api-dot-macromaker.googleplex.com/nonexistent.js"></script>
     <style>
       h1 {
         color: red;
@@ -12,20 +11,53 @@
       p {
         color: blue;
       }
+      .dialog-section {
+        background-color: aliceblue;
+        border-radius: 1.5em;
+        padding: 1em;
+      }
     </style>
   </head>
   <body>
-    <section class="dialog-section">
-      <ul class="messages"></ul>
+    <section class="tips">
+      Try inviting these agents from Macromakers.
+      <ul>
+        <li>
+          <a
+            href="https://macromaker.googleplex.com/macros/fI54nAfA97YQBCS8wLIK"
+            >Nutritionist</a
+          >
+          (fI54nAfA97YQBCS8wLIK)
+        </li>
+        <li>
+          <a
+            href="https://macromaker.googleplex.com/macros/FjZ0ZUkYyhWe1fvOnJWr"
+            >Restaurant</a
+          >
+          (FjZ0ZUkYyhWe1fvOnJWr)
+        </li>
+        <li>
+          <a
+            href="https://macromaker.googleplex.com/macros/bW0n6YI3EGDK8lAnzANB"
+            >Doctor</a
+          >
+          (bW0n6YI3EGDK8lAnzANB)
+        </li>
+      </ul>
     </section>
-    <section class="user-prompt-section">
-      <textarea
-        class="user-prompt"
-        name="user-prompt"
-        rows="4"
-        cols="50"
-        placeholder="@agent Your request"
-      ></textarea>
+    <section class="dialog-section">
+      <section class="message-window">
+        <ul class="messages"></ul>
+      </section>
+      <section class="user-prompt-section">
+        <textarea
+          class="user-prompt"
+          name="user-prompt"
+          rows="4"
+          cols="80"
+          placeholder="@agent Your request"
+        ></textarea>
+      </section>
     </section>
     <div id="debug"></div>
   </body>
@@ -88,6 +120,15 @@ ${agent.name} is a helper. Here is his or her self introduction: ${agent.selfInt
         return `
 A user will ask you for something. You will break down the request into multiple steps and take one step at a time.
 
+You must respond in the following format:
+
+{FROM:User}: @You A request from the user.
+{THOUGHT}: Your thought on the user's request. Think one step at time. Think which agent can help you to fullfil the user's request.
+{SEND}: @Agent You ask an agent for help here.
+{FROM:Agent} @You The agent responds back to you.
+{THOUGHT}: Your thought on the agent's response and all the information you have so far. If you have a conclusion, you can respond back to the user.
+{SEND}: @User Here's the answer!
+
 If you already have the answer, you can return the answer to the user.
 
 {FROM:User}: What is meaning of life?
@@ -139,10 +180,9 @@ You must never send youself a message. Do not do the following:
 {THOUGHT}: My name is Ivan. I will ask myself for help!
 {SEND}: @Ivan Asking myself for help, which I should never do because it could cause an infinite loop!
 
-The agents you know so far, e.g. Agent1, Agent2, Agent3, are not real agents you can call.
-They were just examples for how you can call real agents.
-On the other hand, you can call the following list of agents, who are in the same chatroom as you.
+You can only call agents who are in the same chatroom as you.
 Do not ask any other agent who is not in the chatroom!
+The following agents below are in the same chatroom as you.
 
 ${agents.map(buildHelperPrompt).join("\n")}
 
@@ -325,7 +365,7 @@ I can invite any agent to the chatroom.
 I can also evict any agent from the chatroom.
 Please use my service!
 
-Here are some examples below.
+You can send me commands in the formats below.
 
 invite(abc123)
 invite(abc123, xyz456)
@@ -377,7 +417,7 @@ Just think of me as a code engine.
             return undefined;
           }
 
-          return `@${user} Sorry but I do not understand your command ${request}`;
+          return `@${user} Sorry but I do not understand your command ${request}. Please try again.`;
         }
       }
 
