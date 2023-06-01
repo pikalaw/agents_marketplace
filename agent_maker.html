@@ -33,12 +33,22 @@
       const runMacroEndpointUrl =
         "https://api-dot-macromaker.googleplex.com/run-macro";
 
-      function participatingAgentNames() {
-        return "";
-      }
+      const SYSTEM = "SYSTEM";
 
-      function participatingAgentDescriptions() {
-        return "";
+      /**
+       * A message from an agent has the general form of
+       *     @Recipient Message body
+       * This function strips the @Recipient part and return the message body.
+       * @param {string} message is the original message sent from an agent.
+       * @returns {string} just the message body without the recipient.
+       * annotation.
+       */
+      function stripRecipientFromMessage(message) {
+        const match = message.match(/@[A-Za-z0-9\-\_]+\s*(.*)/);
+        if (!match) {
+          return message;
+        }
+        return match[1];
       }
 
       /**
@@ -46,23 +56,35 @@
        *     @Recipient Message body
        * This function strips the @Recipient part and return the message body.
        * @param {string} message is the original message sent from an agent.
-       * @returns {string} just the message body without the recipient
-       * annotation.
+       * @returns {string | undefined} the recipient if present.
        */
-      function stripRecipientFromMessage(message) {
-        const match = message.match(/@.*?\s*(.*)/);
-        if (!match) {
-          return message;
-        }
-        return match[1];
+      function identifyRecipientFromMessage(message) {
+        const match = message.match(/@([A-Za-z0-9\-\_]+)/);
+        if (match) return match[1];
+        return undefined;
       }
 
-      class Agent {
+      /**
+       * @param {Agent} agent helper.
+       * @returns {string} the full prompt for the helper.
+       */
+      function buildHelperPrompt(agent) {
+        return `
+${agent.name} is a helper. Here is his or her self introduction: "${agent.selfIntroduction}"
+`;
+      }
+
+      /**
+       * @param {Array<Agent>} agents who are helpers.
+       * @returns {string} the full prompt for a cooperative agent with helper
+       * descriptions.
+       */
+      function buildCooperativeAgentPrompt(agents) {
         /**
          * Prompt mechanism for a cooperative agent.
          * @type {string}
          */
-        static cooperativeAgentPrompt = `
+        return `
 A user will ask you for something. You will break down the request into multiple steps and take one step at a time.
 
 If you already have the answer, you can return the answer to the user.
@@ -112,15 +134,18 @@ If someone ask what you can do, give a short summary of what you can do.
 
 You have the following list of helpers. Do not ask any other helper who is not in the list below! However, you can ask the same helper multiple times.
 
-Sally is a helper. Here is his or her self introduction: "I know math and arithmetic."
-
-Tom is a helper. Here is his or her self introduction: "I know the length of a bus is 10 feet. He also knows the length of a car is 7 feet."
-
-Wendy is a helper. Here is his or her self introduction: "I know celebrity's ages. However, you can ask me one celebrity at a time."
+${agents.map(buildHelperPrompt).join("\n")}
 
 Now, start helping!
 `;
+      }
 
+      function extractAgentName(message) {
+        const match = message.match(/([A-Za-z0-9\-\_]+)\./);
+        return match[1];
+      }
+
+      class Agent {
         /**
          * ID of the macro.
          * @type {string}
@@ -147,7 +172,7 @@ Now, start helping!
         ongoingDiscussion = "";
 
         /**
-         * @param {string} macroId - ID of the macro
+         * @param {string} macroId ID of the macro.
          */
         constructor({ macroId }) {
           this.macroId = macroId;
@@ -159,31 +184,44 @@ Now, start helping!
          */
         async init() {
           const namePromise = this.accepts({
-            user: "SYSTEM",
+            user: SYSTEM,
             request: "What is your name?",
-            temperature: 0.7,
           }).then(stripRecipientFromMessage);
 
           const selfIntroductionPromise = this.accepts({
-            user: "SYSTEM",
+            user: SYSTEM,
             request: "What can you do?",
-            temperature: 0.7,
           }).then(stripRecipientFromMessage);
 
-          const { user, selfIntroduction } = await Promise.all([
+          const [name, selfIntroduction] = await Promise.all([
             namePromise,
             selfIntroductionPromise,
           ]);
-          this.user = user;
+          this.name = extractAgentName(name);
           this.selfIntroduction = selfIntroduction;
         }
 
+        isLLMAgent() {
+          return true;
+        }
+
         /**
-         * @param {string} user User ID of the sender
-         * @param {string} request message of the user
-         * @returns {string} the next message
+         * @param {string} user User ID of the sender.
+         * @param {string} request message of the user.
+         * @param {number} temperature for the LLMs.
+         * @param {Array<Agent>} helpers that this agent can call for help.
+         * @param {Array<function(message: string): boolean>} accepts functions
+         * of the LLM's response. If the list is empty, then the first response
+         * is accepted.
+         * @returns {string} the next message.
          */
-        async accepts({ user, request, temperature = 0.7 }) {
+        async accepts({
+          user,
+          request,
+          temperature = 0.7,
+          helpers = [],
+          accepts = [],
+        }) {
           const inputKey = {
             cooperative_agent_prompt: "19",
             ongoing_discussion: "15",
@@ -194,7 +232,8 @@ Now, start helping!
             [inputKey.user]: user,
             [inputKey.request]: request,
             [inputKey.ongoing_discussion]: this.ongoingDiscussion,
-            [inputKey.cooperative_agent_prompt]: Agent.cooperativeAgentPrompt,
+            [inputKey.cooperative_agent_prompt]:
+              buildCooperativeAgentPrompt(helpers),
           };
 
           const formData = new FormData();
@@ -222,12 +261,47 @@ Now, start helping!
               this.ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
 
               const match = noHallucinationResponse.match(/\{SEND\}: (.*)/);
-              if (match) return match[1];
+              if (!match) continue;
+
+              const messageText = match[1];
+
+              if (accepts.some((acceptFn) => !acceptFn(messageText))) continue;
+
+              return messageText;
             }
           }
-          throw new Error(
-            "Unable to get agent to return a response with {SEND}."
-          );
+          throw new Error("Unable to get agent to return a valid response.");
+        }
+      }
+
+      /**
+       * This is a special agent that represents the human user.
+       * Code-wise, it does nothing. Having it would make the dispatcher code
+       * uniform without the need to handle messages dispatched to the human
+       * user.
+       */
+      class User {
+        /**
+         * @type {string}
+         */
+        name = "User";
+
+        /**
+         * @type {string}
+         */
+        selfIntroduction = "You";
+
+        isLLMAgent() {
+          return false;
+        }
+
+        /**
+         * @param {string} user User ID of the sender.
+         * @param {string} request message of the user.
+         * @returns {string | undefined} the next message if any.
+         */
+        async accepts({ user, request, temperature = 0.7, helpers = [] }) {
+          return undefined;
         }
       }
 
@@ -240,8 +314,8 @@ Now, start helping!
 
       class DialogScreen {
         /**
-         * @param {string} user ID of the sender
-         * @param {string} message of the user
+         * @param {string} user ID of the sender.
+         * @param {string} message of the user.
          */
         addMessage({ sender, message }) {
           const li = htmlToElement(
@@ -255,24 +329,177 @@ Now, start helping!
         }
       }
 
-      class AgentDispatcher {
+      class MessageDispatcher {
         /**
-         * @param {string} user ID of the sender
-         * @param {string} message of the user
+         * @type {DialogScreen}
          */
-        dispatchMessage({ sender, message }) {}
+        #dialogScreen;
+
+        /**
+         * Pending messages to be dispatch.
+         * @type {Array<{sender: string, message: string}>}
+         */
+        #pendingMessages = [];
+
+        /**
+         * Map of agent's name to the agent object.
+         *
+         * A tool can be a special kind of agent that has custom logic to make
+         * API calls. We make no distinction between an agent or a tool.
+         *
+         * A user can be a special kind of agent that does nothing in the code.
+         * See the jsdoc on the User class for more details.
+         * @type {Map<string, Agent | Tool | User>}
+         */
+        #agents = new Map();
+
+        /**
+         * The admin agent of this chatroom.
+         * @type {Map<string, Agent | Tool | User>}
+         */
+        admin;
+
+        /**
+         * Temperature of the agents.
+         * @type {Number}
+         */
+        temperature = 0.7;
+
+        /**
+         * @param {DialogScreen} dialogScreen.
+         */
+        constructor(dialogScreen) {
+          this.#dialogScreen = dialogScreen;
+        }
+
+        /**
+         * @param {string} macroId of the agent in Macromaker.
+         * @returns {Agent}
+         */
+        async addAgentWithAnnouncement(macroId) {
+          const agent = new Agent({ macroId });
+          await agent.init();
+
+          this.#agents.set(agent.name, agent);
+
+          this.#dialogScreen.addMessage({
+            sender: agent.name,
+            message: agent.selfIntroduction,
+          });
+
+          return agent;
+        }
+
+        /**
+         * @param {Tool | User} agent to be added without announcement.
+         */
+        addAgentSilently(agent) {
+          this.#agents.set(agent.name, agent);
+        }
+
+        /**
+         * @param {string} sender of the message.
+         * @param {string} message
+         */
+        submitMessage({ sender, message }) {
+          this.#pendingMessages.push({ sender, message });
+        }
+
+        run() {
+          while (this.#pendingMessages.length > 0) {
+            this.#dispatchMessage(this.#pendingMessages.pop());
+          }
+          setTimeout(() => this.run(), 1000);
+        }
+
+        /**
+         * @param {string} user ID of the sender.
+         * @param {string} message of the user.
+         */
+        async #dispatchMessage({ sender, message }) {
+          const recipientName = identifyRecipientFromMessage(message);
+          if (!recipientName) {
+            console.log(`Ignoring unknown message from ${sender}: ${message}`);
+            return;
+          }
+
+          const recipientAgent = this.#agents.get(recipientName);
+          if (!recipientAgent) {
+            console.log(
+              `Ignoring message to unknown agent ${recipientName}: ${message}`
+            );
+            return;
+          }
+
+          this.#dialogScreen.addMessage({ sender, message });
+
+          const reply = await recipientAgent.accepts({
+            user: sender,
+            request: message,
+            temperature: this.temperature,
+            helpers: this.#getLLMHelpers(),
+          });
+          if (reply) {
+            this.#pendingMessages.push({
+              sender: recipientName,
+              message: reply,
+            });
+          }
+        }
+
+        /**
+         * @returns {Agent} who is the admin of the chatroom.
+         */
+        getAdminAgent() {
+          // Right now, we always add the admin as the first agent.
+          return this.#agents[0];
+        }
+
+        /**
+         * @returns {Array<Agent>} who are LLM-backed agents.
+         */
+        #getLLMHelpers() {
+          return [...this.#agents.values()].filter((agent) =>
+            agent.isLLMAgent()
+          );
+        }
+      }
+
+      /**
+       * @param {MessageDispatcher} dispatcher
+       */
+      function setUpEventHandlers(dispatcher) {
+        const user = new User();
+        dispatcher.addAgentSilently(user);
+
+        const userPrompt = document.querySelector(".user-prompt");
+        userPrompt.addEventListener("keyup", (event) => {
+          if (event.keyCode !== 13) return;
+
+          let message = userPrompt.value;
+          if (!identifyRecipientFromMessage(message)) {
+            message = `@${dispatcher.admin.name} ${message}`;
+          }
+
+          dispatcher.submitMessage({
+            sender: user.name,
+            message,
+          });
+
+          userPrompt.value = "";
+        });
       }
 
       const dialogScreen = new DialogScreen();
+      const dispatcher = new MessageDispatcher(dialogScreen);
 
-      const bob = new Agent({ macroId: "TPaASiYUiPeRJmwTC62d" });
-      await bob.init();
-      const message = await bob.accepts({
-        user: "Lawrence",
-        request: "What is twice the age of Tom Cruise?",
-      });
+      // The host of the chatroom.
+      dispatcher.admin = await dispatcher.addAgentWithAnnouncement(
+        "TPaASiYUiPeRJmwTC62d"
+      );
 
-      dialogScreen.addMessage({ sender: bob.name, message: message });
+      setUpEventHandlers(dispatcher);
+      dispatcher.run();
     })();
   </script>
 </html>
