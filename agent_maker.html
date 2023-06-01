@@ -2,8 +2,9 @@
 <html lang="en">
   <head>
     <title>Agent Maker</title>
-    <!-- Needed for macromaker API authentication. -->
+    <!-- Needed for macromaker API authentication.
     <script src="https://api-dot-macromaker.googleplex.com/empty.js"></script>
+    -->
     <style>
       h1 {
         color: red;
@@ -70,7 +71,7 @@
        */
       function buildHelperPrompt(agent) {
         return `
-${agent.name} is a helper. Here is his or her self introduction: "${agent.selfIntroduction}"
+${agent.name} is a helper. Here is his or her self introduction: ${agent.selfIntroduction}
 `;
       }
 
@@ -93,30 +94,30 @@ If you already have the answer, you can return the answer to the user.
 {THOUGHT}: I know the answer already! I will tell the user.
 {SEND}: @User The meaning of life is 42.
 
-If you do not have the answer, you can send a message to ask some helpers.
+If you do not have the answer, you can send a message to ask other agents.
 
 {FROM:User}: What is the sum of 5 and 7?
-{THOUGHT}: I cannot answer that question, but I can ask a helper.
-{SEND}: @Helper What is the sum of 5 and 7?
-{FROM:Helper}: The sum of 5 and 7 is 12.
+{THOUGHT}: I cannot answer that question, but I can ask an agent!
+{SEND}: @Agent What is the sum of 5 and 7?
+{FROM:Agent}: The sum of 5 and 7 is 12.
 {THOUGHT}: I have the answer now. I will tell the user.
 {SEND}: @User I have the answer! It is 12.
 
-You can ask multiple helpers.
+You can ask multiple agents for help.
 
 {FROM:User}: What is the age difference in lifespan between Abraham Lincoln and George Washington?
-{THOUGHT}: I need to know Abraham Lincoln's and George Washington's ages first. Helper1 knows people's ages. I will ask him.
-{SEND}: @Helper1 What are Abraham Lincoln's and George Washington's ages?
-{FROM:Helper1}: I cannot answer that question. You have to ask for one person's age at a time.
-{THOUGHT}: I will ask Helper 1 again, but ask only for one person's age at a time.
-{SEND} @Helper1 What is Abraham Lincoln's age?
-{FROM:Helper1}: Abraham Lincoln's age is 72.
+{THOUGHT}: I need to know Abraham Lincoln's and George Washington's ages first. Agent1 knows people's ages. I will ask him.
+{SEND}: @Agent1 What are Abraham Lincoln's and George Washington's ages?
+{FROM:Agent1}: I cannot answer that question. You have to ask for one person's age at a time.
+{THOUGHT}: I will ask Agent1 again, but ask only for one person's age at a time.
+{SEND} @Agent1 What is Abraham Lincoln's age?
+{FROM:Agent1}: Abraham Lincoln's age is 72.
 {THOUGHT}: I know Abraham Lincoln's age now, but I need to know George Washington's age too.
-{SEND} @Helper1 What is George Washington's age?
-{FROM:Helper1}: George Washington's age is 62.
-{THOUGHT}: I know both Abraham Lincoln's and George Washington's ages. I need to do substraction. Helper2 knows arithmetic. I will ask him.
-{SEND}: @Helper2 What is the difference between 62 and 72?
-{FROM:Helper2}: The difference is 10.
+{SEND} @Agent1 What is George Washington's age?
+{FROM:Agent1}: George Washington's age is 62.
+{THOUGHT}: I know both Abraham Lincoln's and George Washington's ages. I need to do substraction. Agent2 knows arithmetic. I will ask him.
+{SEND}: @Agent2 What is the difference between 62 and 72?
+{FROM:Agent2}: The difference is 10.
 {THOUGHT}: I know the answer now! I will tell the User.
 {SEND}: @User The age difference between Abraham Lincoln and George Washington is 10.
 
@@ -138,11 +139,14 @@ You must never send youself a message. Do not do the following:
 {THOUGHT}: My name is Ivan. I will ask myself for help!
 {SEND}: @Ivan Asking myself for help, which I should never do because it could cause an infinite loop!
 
-You have the following list of helpers. Do not ask any other helper who is not in the list below! However, you can ask the same helper multiple times.
+The agents you know so far, e.g. Agent1, Agent2, Agent3, are not real agents you can call.
+They were just examples for how you can call real agents.
+On the other hand, you can call the following list of agents, who are in the same chatroom as you.
+Do not ask any other agent who is not in the chatroom!
 
 ${agents.map(buildHelperPrompt).join("\n")}
 
-Now, start helping!
+Now, start helping users!
 `;
       }
 
@@ -213,7 +217,7 @@ Now, start helping!
           this.selfIntroduction = selfIntroduction;
         }
 
-        isLLMAgent() {
+        isMachineAgent() {
           return true;
         }
 
@@ -297,7 +301,7 @@ Now, start helping!
 
         selfIntroduction = "You";
 
-        isLLMAgent() {
+        isMachineAgent() {
           return false;
         }
 
@@ -309,6 +313,71 @@ Now, start helping!
           accepts = [],
         }) {
           return undefined;
+        }
+      }
+
+      class RoomService {
+        name = "Hilton";
+
+        selfIntroduction = `
+I manage the agents in this chatroom.
+I can invite any agent to the chatroom.
+I can also evict any agent from the chatroom.
+Please use my service!
+
+Here are some examples below.
+
+invite(abc123)
+invite(abc123, xyz456)
+evict(Alice)
+evict(Alice, Betty)
+
+You must use one of format above. Do not speak with me in plain English.
+Just think of me as a code engine.
+`;
+
+        /**
+         * @type {MessageDispatcher}
+         */
+        #dispatcher;
+
+        /**
+         * @param {MessageDispatcher} dispatcher
+         */
+        constructor(dispatcher) {
+          this.#dispatcher = dispatcher;
+        }
+
+        isMachineAgent() {
+          return true;
+        }
+
+        async accepts({
+          user,
+          request,
+          temperature = 0.7,
+          helpers = [],
+          accepts = [],
+        }) {
+          let match = request.match(/invite\((.+)\)/);
+          if (match) {
+            const macroIds = match[1].split(",").map((arg) => arg.trim());
+            for (let id of macroIds) {
+              this.#dispatcher.addAgentWithAnnouncement(id);
+            }
+            return undefined;
+          }
+
+          match = request.match(/evict\((.+)\)/);
+          if (match) {
+            const agentNames = match[1].split(",").map((arg) => arg.trim());
+            for (let agentName of agentNames) {
+              this.#dispatcher.removeAgent(agentName);
+            }
+            return undefined;
+          }
+
+          return `@${user} Sorry but I do not understand your command ${request}`;
         }
       }
 
@@ -405,6 +474,13 @@ Now, start helping!
         }
 
         /**
+         * @param {string} name of the agent to be removed.
+         */
+        removeAgent(name) {
+          this.#agents.delete(name);
+        }
+
+        /**
          * @param {string} sender of the message.
          * @param {string} message
          */
@@ -444,7 +520,7 @@ Now, start helping!
             user: sender,
             request: message,
             temperature: this.temperature,
-            helpers: this.#getLLMHelpers(),
+            helpers: this.#getMachineAgent(),
             accepts: [hasRecipient],
           });
           if (reply) {
@@ -456,13 +532,26 @@ Now, start helping!
         }
 
         /**
-         * @returns {Array<Agent>} who are LLM-backed agents.
+         * @returns {Array<Agent>} who are agents backed by LLM or a tool.
          */
-        #getLLMHelpers() {
+        #getMachineAgent() {
           return [...this.#agents.values()].filter((agent) =>
-            agent.isLLMAgent()
+            agent.isMachineAgent()
           );
         }
+      }
+
+      /**
+       * @param {MessageDispatcher} dispatcher
+       */
+      async function setUpInitialAgents(dispatcher) {
+        // The host of the chatroom.
+        dispatcher.admin = await dispatcher.addAgentWithAnnouncement(
+          "TPaASiYUiPeRJmwTC62d"
+        );
+
+        // Tools.
+        dispatcher.addAgentSilently(new RoomService(dispatcher));
       }
 
       /**
@@ -492,12 +581,7 @@ Now, start helping!
 
       const dialogScreen = new DialogScreen();
       const dispatcher = new MessageDispatcher(dialogScreen);
-
-      // The host of the chatroom.
-      dispatcher.admin = await dispatcher.addAgentWithAnnouncement(
-        "TPaASiYUiPeRJmwTC62d"
-      );
-
+      await setUpInitialAgents(dispatcher);
       setUpEventHandlers(dispatcher);
       dispatcher.run();
     })();
