@@ -153,6 +153,10 @@ Now, start helping!
         return match[1];
       }
 
+      function hasRecipient(message) {
+        return message.match(/@[A-Za-z0-9\-\_]+/);
+      }
+
       class Agent {
         /**
          * ID of the macro.
@@ -289,26 +293,21 @@ Now, start helping!
        * user.
        */
       class User {
-        /**
-         * @type {string}
-         */
         name = "User";
 
-        /**
-         * @type {string}
-         */
         selfIntroduction = "You";
 
         isLLMAgent() {
           return false;
         }
 
-        /**
-         * @param {string} user User ID of the sender.
-         * @param {string} request message of the user.
-         * @returns {string | undefined} the next message if any.
-         */
-        async accepts({ user, request, temperature = 0.7, helpers = [] }) {
+        async accepts({
+          user,
+          request,
+          temperature = 0.7,
+          helpers = [],
+          accepts = [],
+        }) {
           return undefined;
         }
       }
@@ -446,6 +445,7 @@ Now, start helping!
             request: message,
             temperature: this.temperature,
             helpers: this.#getLLMHelpers(),
+            accepts: [hasRecipient],
           });
           if (reply) {
             this.#pendingMessages.push({
