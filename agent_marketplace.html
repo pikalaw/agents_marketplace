@@ -902,6 +902,7 @@ ${agent.ongoingDiscussion}
         temperatureText.textContent = dispatcher.temperature;
 
         const temperatureSlider = document.querySelector("#temperature-slider");
+        temperatureSlider.value = dispatcher.temperature * 10;
         temperatureSlider.addEventListener("input", (event) => {
           const newTemperature = event.target.value / 10;
           temperatureText.textContent = newTemperature;
