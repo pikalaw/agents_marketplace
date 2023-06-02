@@ -9,11 +9,8 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0"
     />
     <style>
-      h1 {
-        color: red;
-      }
       p {
-        color: blue;
+        color: darkblue;
       }
       .body {
         display: flex;
@@ -125,15 +122,19 @@
     </style>
   </head>
   <body class="body">
-    <section class="tips">
-      Bob is your
+    <section class="dialog-section">
+    <article class="tips">
+      <p>Bob is your
       <a href="https://macromaker.googleplex.com/macros/TPaASiYUiPeRJmwTC62d"
         >personal assistant</a
-      >
-      (TPaASiYUiPeRJmwTC62d). If you do not prefix your message with
-      <strong>@[agent name]</strong>, you will be speaking with Bob.
-      <br /><br />
-      Try asking Bob to invite the following agents in Macromakers.
+      >.
+      You can tell him about yourself,
+      and he will try to run tasks for you based on your preferences.
+      </p>
+      <p>
+        Try asking Bob to invite the following agents in Macromakers.
+        Bob will be more productive if he has helpers!
+      </p>
       <ul>
         <li>
           <a
@@ -160,8 +161,12 @@
           (bW0n6YI3EGDK8lAnzANB)
         </li>
       </ul>
-    </section>
-    <section class="dialog-section">
+      <p>
+        If you do not prefix your message with <strong>@[agent name]</strong>,
+        you will be speaking with Bob.
+      </p>
+      <p>Wait for Bob to enter the chat and have fun!</p>
+    </article>
       <section class="message-window">
         <ul class="messages"></ul>
         <div class="dot-flashing"></div>
@@ -556,7 +561,7 @@ Do not say anything else to me.
             return `@${user} ${this.#dispatcher.listAgent().join(", ")}`;
           }
 
-          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list.`;
+          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list. However, do not speak to me in plain English, which I do not understand.`;
         }
       }
 
