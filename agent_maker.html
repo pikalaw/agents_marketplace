@@ -47,6 +47,15 @@
       .transcript {
         cursor: pointer;
       }
+      .transcript-section {
+        background-color: lavender;
+        border: 1px solid black;
+        box-shadow: 10px 5px 5px grey;
+        position: absolute;
+        height: 90%;
+        visibility: hidden;
+        width: 90%;
+      }
 
       .dot-flashing {
         left: 15px;
@@ -149,6 +158,7 @@
         ></textarea>
       </section>
     </section>
+    <textarea class="transcript-section"></textarea>
   </body>
   <script>
     (async () => {
@@ -579,8 +589,12 @@ Do not say anything else to me.
               window.alert(`Agent ${sender} is not backed by LLM!`);
               return;
             }
-            window.alert(`Agent ${sender}'s thought transcript:
-${agent.ongoingDiscussion}`);
+
+            const transcriptSection = document.querySelector(
+              ".transcript-section"
+            );
+            transcriptSection.value = agent.ongoingDiscussion;
+            transcriptSection.style.visibility = "visible";
           });
         }
 
@@ -782,6 +796,11 @@ ${agent.ongoingDiscussion}`);
           });
 
           userPrompt.value = "";
+        });
+
+        const transcriptSection = document.querySelector(".transcript-section");
+        transcriptSection.addEventListener("keyup", () => {
+          transcriptSection.style.visibility = "hidden";
         });
       }
 
