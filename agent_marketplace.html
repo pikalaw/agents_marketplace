@@ -206,12 +206,7 @@
         <div class="temperature-control">
           Temperature
           <span id="temperature-text"></span>
-          <input
-            type="range"
-            min="0"
-            max="10"
-            id="temperature-slider"
-          />
+          <input type="range" min="0" max="10" id="temperature-slider" />
         </div>
       </section>
     </section>
@@ -825,7 +820,7 @@ ${agent.ongoingDiscussion}
           const recipientAgent = this.#agents.get(recipientName);
           if (!recipientAgent) {
             window.alert(
-              `Ignoring message to unknown agent ${recipientName}: ${message}`
+              `Ignoring message from ${sender} to unknown agent ${recipientName}: ${message}`
             );
             return;
           }
@@ -912,7 +907,7 @@ ${agent.ongoingDiscussion}
           temperatureText.textContent = newTemperature;
 
           dispatcher.temperature = newTemperature;
-        })
+        });
       }
 
       const dialogScreen = new DialogScreen();
