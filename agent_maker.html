@@ -11,36 +11,49 @@
       p {
         color: blue;
       }
+      .body {
+        display: flex;
+        flex-direction: column;
+      }
       .dialog-section {
         background-color: aliceblue;
         border-radius: 1.5em;
+        display: flex;
+        flex-direction: column;
         padding: 1em;
       }
     </style>
   </head>
-  <body>
+  <body class="body">
     <section class="tips">
-      Try inviting these agents from Macromakers.
+      Your host is your
+      <a href="https://macromaker.googleplex.com/macros/TPaASiYUiPeRJmwTC62d"
+        >personal assistant</a
+      >(TPaASiYUiPeRJmwTC62d). Try asking your host to invite the following
+      agents in Macromakers.
       <ul>
         <li>
           <a
             href="https://macromaker.googleplex.com/macros/fI54nAfA97YQBCS8wLIK"
-            >Nutritionist</a
           >
+            Nutritionist
+          </a>
           (fI54nAfA97YQBCS8wLIK)
         </li>
         <li>
           <a
             href="https://macromaker.googleplex.com/macros/FjZ0ZUkYyhWe1fvOnJWr"
-            >Restaurant</a
           >
+            Restaurant
+          </a>
           (FjZ0ZUkYyhWe1fvOnJWr)
         </li>
         <li>
           <a
             href="https://macromaker.googleplex.com/macros/bW0n6YI3EGDK8lAnzANB"
-            >Doctor</a
           >
+            Doctor
+          </a>
           (bW0n6YI3EGDK8lAnzANB)
         </li>
       </ul>
@@ -54,12 +67,11 @@
           class="user-prompt"
           name="user-prompt"
           rows="4"
-          cols="80"
+          cols="50"
           placeholder="@agent Your request"
         ></textarea>
       </section>
     </section>
-    <div id="debug"></div>
   </body>
   <script>
     (async () => {
@@ -123,7 +135,7 @@ A user will ask you for something. You will break down the request into multiple
 You must respond in the following format:
 
 {FROM:User}: @You A request from the user.
-{THOUGHT}: Your thought on the user's request. Think one step at time. Think which agent can help you to fullfil the user's request.
+{THOUGHT}: Your thought on the user's request. Think one step at time. If you cannot do the next step, find an agent who can help you on the next step and ask that agent to do it for you.
 {SEND}: @Agent You ask an agent for help here.
 {FROM:Agent} @You The agent responds back to you.
 {THOUGHT}: Your thought on the agent's response and all the information you have so far. If you have a conclusion, you can respond back to the user.
@@ -138,7 +150,7 @@ If you already have the answer, you can return the answer to the user.
 If you do not have the answer, you can send a message to ask other agents.
 
 {FROM:User}: What is the sum of 5 and 7?
-{THOUGHT}: I cannot answer that question, but I can ask an agent!
+{THOUGHT}: I cannot answer that question, but I know the agent Agent can answer that question for me!
 {SEND}: @Agent What is the sum of 5 and 7?
 {FROM:Agent}: The sum of 5 and 7 is 12.
 {THOUGHT}: I have the answer now. I will tell the user.
@@ -147,7 +159,7 @@ If you do not have the answer, you can send a message to ask other agents.
 You can ask multiple agents for help.
 
 {FROM:User}: What is the age difference in lifespan between Abraham Lincoln and George Washington?
-{THOUGHT}: I need to know Abraham Lincoln's and George Washington's ages first. Agent1 knows people's ages. I will ask him.
+{THOUGHT}: I need to know Abraham Lincoln's and George Washington's ages first. I don't know that, but I know Agent1 knows people's ages. I will ask him.
 {SEND}: @Agent1 What are Abraham Lincoln's and George Washington's ages?
 {FROM:Agent1}: I cannot answer that question. You have to ask for one person's age at a time.
 {THOUGHT}: I will ask Agent1 again, but ask only for one person's age at a time.
@@ -156,7 +168,7 @@ You can ask multiple agents for help.
 {THOUGHT}: I know Abraham Lincoln's age now, but I need to know George Washington's age too.
 {SEND} @Agent1 What is George Washington's age?
 {FROM:Agent1}: George Washington's age is 62.
-{THOUGHT}: I know both Abraham Lincoln's and George Washington's ages. I need to do substraction. Agent2 knows arithmetic. I will ask him.
+{THOUGHT}: I know both Abraham Lincoln's and George Washington's ages. I need to do substraction. I do not do arithmetic well, but Agent2 knows arithmetic well. I will ask him.
 {SEND}: @Agent2 What is the difference between 62 and 72?
 {FROM:Agent2}: The difference is 10.
 {THOUGHT}: I know the answer now! I will tell the User.
@@ -165,14 +177,14 @@ You can ask multiple agents for help.
 If someone ask your name, just say your name.
 
 {FROM:User}: What is your name?
-{THOUGHT}: I will tell the user my name. I will use just my name in the reply. I will not say, "I am" or "My name is".
-{SEND}: @User Name.
+{THOUGHT}: I will tell the user my name. I will reply with just my name. I will not say, "I am" or "My name is".
+{SEND}: @User Your name here.
 
 If someone ask what you can do, give a short summary of what you can do.
 
 {FROM:User}: What can you do?
 {THOUGHT}: I will give a succinct summary of what I am capable of.
-{SEND}: @User Your summary here.
+{SEND}: @User Your summary of what you can do.
 
 You must never send youself a message. Do not do the following:
 
@@ -186,7 +198,7 @@ The following agents below are in the same chatroom as you.
 
 ${agents.map(buildHelperPrompt).join("\n")}
 
-Now, start helping users!
+Now, you try.
 `;
       }
 
@@ -360,19 +372,39 @@ Now, start helping users!
         name = "Hilton";
 
         selfIntroduction = `
+I am a tool. I do not understand plain English.
+I can only accept one the following commands:
+
+  invite(...)
+  evict(...)
+  list
+
 I manage the agents in this chatroom.
-I can invite any agent to the chatroom.
-I can also evict any agent from the chatroom.
-Please use my service!
+I can invite agents to the chatroom.
+I can also evict agents from the chatroom.
+I can also tell you who is in the chatroom.
 
-You can send me commands in the formats below.
+To invite agents to the chatroom, issue one of the following commands in that format.
 
-invite(abc123)
-invite(abc123, xyz456)
-evict(Alice)
-evict(Alice, Betty)
+Commands:
+  invite(abc123)
+  invite(abc123, xyz456)
+  invite(abc123, xyz456, uyt877)
 
-You must use one of format above. Do not speak with me in plain English.
+To evict agents to the chatroom, issue one of the following commands in that format.
+
+Commands:
+  evict(Alice)
+  evict(Alice, Betty)
+  evict(Alice, Betty, Carol)
+
+To list the agents currently in the chatroom, issue this commands in this format.
+
+Command:
+  list
+
+You must use one of commands above. Do not speak with me in plain English.
+Do not say anything else to me except the commands above.
 Just think of me as a code engine.
 `;
 
@@ -405,7 +437,7 @@ Just think of me as a code engine.
             for (let id of macroIds) {
               this.#dispatcher.addAgentWithAnnouncement(id);
             }
-            return undefined;
+            return `@${user} Invited!`;
           }
 
           match = request.match(/evict\((.+)\)/);
@@ -414,10 +446,15 @@ Just think of me as a code engine.
             for (let agentName of agentNames) {
               this.#dispatcher.removeAgent(agentName);
             }
-            return undefined;
+            return `@${user} Evicted!`;
           }
 
-          return `@${user} Sorry but I do not understand your command ${request}. Please try again.`;
+          match = request.match(/list/);
+          if (match) {
+            return `@${user} ${this.#dispatcher.listAgent().join(', ')}`;
+          }
+
+          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list.`;
         }
       }
 
@@ -518,6 +555,13 @@ Just think of me as a code engine.
          */
         removeAgent(name) {
           this.#agents.delete(name);
+        }
+
+        /**
+         * @returns {Array<string>} a list of agent's names.
+         */
+        listAgent() {
+          return [...this.#agents.values()].map(agent => agent.name);
         }
 
         /**
