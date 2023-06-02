@@ -322,8 +322,8 @@ If someone ask your name, just say your name.
 If someone ask what you can do, give a short summary of what you can do.
 
 {FROM:User}: What can you do?
-{THOUGHT}: I will give a summary of what I am capable of.
-{SEND}: @User My summary of what I can do.
+{THOUGHT}: I will give an introduction of who I am and a summary of what I am capable of.
+{SEND}: @User My response here.
 
 You must never send youself a message. Do not do the following:
 
@@ -552,17 +552,33 @@ I can also tell you who is in the chatroom.
 
 To invite agents to the chatroom, issue one of the following commands in the following format.
 
-Commands:
+[GOOD examples]
   invite(abc123)
   invite(abc123, xyz456)
   invite(abc123, xyz456, uyt877)
 
+But do not send these messages below.
+
+[BAD examples]
+  invite abc123
+  invite abc123 xyz456
+  invite abc123 xyz456 uyt877
+  Thank you!
+  You're welcome!
+
 To evict agents to the chatroom, issue one of the following commands in the following format.
 
-Commands:
+[GOOD examples]
   evict(Alice)
   evict(Alice, Betty)
   evict(Alice, Betty, Carol)
+
+But do not send these messages below.
+
+[BAD examples]
+  evict Alice
+  evict Alice Betty
+  evict Alice Betty Carol
 
 To list the agents currently in the chatroom, issue this commands in the following format.
 
@@ -733,7 +749,7 @@ ${agent.ongoingDiscussion}
          * Temperature of the agents.
          * @type {Number}
          */
-        temperature = 0.7;
+        temperature = 1.0;
 
         /**
          * @param {DialogScreen} dialogScreen.
