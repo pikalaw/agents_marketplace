@@ -4,6 +4,10 @@
     <title>Agent Maker</title>
     <!-- Needed for macromaker API authentication. -->
     <script src="https://api-dot-macromaker.googleplex.com/nonexistent.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0"
+    />
     <style>
       h1 {
         color: red;
@@ -21,6 +25,14 @@
         display: flex;
         flex-direction: column;
         padding: 1em;
+      }
+      .message-sender {
+        align-items: center;
+        display: flex;
+        gap: 0.5em;
+      }
+      .transcript {
+        cursor: pointer;
       }
     </style>
   </head>
@@ -328,14 +340,13 @@ Now, you try.
             for (let message of response.messages) {
               const bestResponse = message.text;
               const noHallucinationResponse = bestResponse.replace(
-                /[\n\r\s]*\{FROM:.*/,
+                /[\n\r\s]*\{FROM:[^]*/,
                 ""
               );
               this.ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
               this.ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
 
-              const match =
-                noHallucinationResponse.match(/\{SEND\}:\s*([^]*)/);
+              const match = noHallucinationResponse.match(/\{SEND\}:\s*([^]*)/);
               if (!match) continue;
 
               const messageText = match[1];
@@ -474,12 +485,33 @@ Do not say anything else to me.
         addMessage({ sender, message }) {
           const li = htmlToElement(
             `<li class="message-entry">
-              <div class="message-sender">${sender}</div>
+              <div class="message-sender">
+                ${sender}
+                <span class="material-symbols-outlined transcript"
+                    title="See thought transcript">
+                  psychology
+                </span> 
+              </div>
               <div class="message-body">${message}</div>
             </li>`
           );
           const ul = document.querySelector(".messages");
           ul.append(li);
+
+          const thought = li.querySelector(".transcript");
+          thought.addEventListener("click", () => {
+            const agent = dispatcher.getAgent(sender);
+            if (!agent) {
+              window.alert(`Agent ${sender} is no longer in the chatroom!`);
+              return;
+            }
+            if (agent.type !== AgentType.LLM) {
+              window.alert(`Agent ${sender} is not backed by LLM!`);
+              return;
+            }
+            window.alert(`Agent ${sender}'s thought transcript:
+${agent.ongoingDiscussion}`);
+          });
         }
       }
 
@@ -566,6 +598,14 @@ Do not say anything else to me.
         }
 
         /**
+         * @param {string} name of the agent to retrieve.
+         * @returns {Agent | undefined}
+         */
+        getAgent(name) {
+          return this.#agents.get(name);
+        }
+
+        /**
          * @param {string} sender of the message.
          * @param {string} message
          */
@@ -648,7 +688,7 @@ Do not say anything else to me.
         dispatcher.addAgentSilently(user);
 
         const userPrompt = document.querySelector(".user-prompt");
-        userPrompt.addEventListener("keyup", (event) => {
+        userPrompt.addEventListener("keyup", event => {
           if (event.keyCode !== 13) return;
 
           let message = userPrompt.value;
