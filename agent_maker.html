@@ -24,6 +24,7 @@
         border-radius: 1.5em;
         display: flex;
         flex-direction: column;
+        gap: 1em;
         padding: 1em;
       }
       .message-sender {
@@ -31,20 +32,73 @@
         display: flex;
         gap: 0.5em;
       }
+      .message-window {
+        display: flex;
+        flex-direction: column;
+      }
       .transcript {
         cursor: pointer;
+      }
+
+      .dot-flashing {
+        left: 15px;
+        position: relative;
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background-color: #9880ff;
+        color: #9880ff;
+        animation: dot-flashing 1s infinite linear alternate;
+        animation-delay: 0.5s;
+      }
+      .dot-flashing::before,
+      .dot-flashing::after {
+        content: "";
+        display: inline-block;
+        position: absolute;
+        top: 0;
+      }
+      .dot-flashing::before {
+        left: -15px;
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background-color: #9880ff;
+        color: #9880ff;
+        animation: dot-flashing 1s infinite alternate;
+        animation-delay: 0s;
+      }
+      .dot-flashing::after {
+        left: 15px;
+        width: 10px;
+        height: 10px;
+        border-radius: 5px;
+        background-color: #9880ff;
+        color: #9880ff;
+        animation: dot-flashing 1s infinite alternate;
+        animation-delay: 1s;
+      }
+      @keyframes dot-flashing {
+        0% {
+          background-color: #9880ff;
+        }
+        50%,
+        100% {
+          background-color: rgba(152, 128, 255, 0.2);
+        }
       }
     </style>
   </head>
   <body class="body">
     <section class="tips">
-      Your host is your
+      Bob is your
       <a href="https://macromaker.googleplex.com/macros/TPaASiYUiPeRJmwTC62d"
         >personal assistant</a
       >
-      (TPaASiYUiPeRJmwTC62d). If you do not prefix your message with @[agent],
-      you will be speaking with your host. <br /><br />
-      Try asking your host to invite the following agents in Macromakers.
+      (TPaASiYUiPeRJmwTC62d). If you do not prefix your message with
+      <strong>@[agent name]</strong>, you will be speaking with Bob.
+      <br /><br />
+      Try asking Bob to invite the following agents in Macromakers.
       <ul>
         <li>
           <a
@@ -75,6 +129,7 @@
     <section class="dialog-section">
       <section class="message-window">
         <ul class="messages"></ul>
+        <div class="dot-flashing"></div>
       </section>
       <section class="user-prompt-section">
         <textarea
@@ -513,6 +568,14 @@ Do not say anything else to me.
 ${agent.ongoingDiscussion}`);
           });
         }
+
+        /**
+         * @param {string} visibility either "visible" or "hidden".
+         */
+        turnFlashingDots(visibility) {
+          const dots = document.querySelector(".dot-flashing");
+          dots.style.visibility = visibility;
+        }
       }
 
       class MessageDispatcher {
@@ -613,10 +676,12 @@ ${agent.ongoingDiscussion}`);
           this.#pendingMessages.push({ sender, message });
         }
 
-        run() {
+        async run() {
           while (this.#pendingMessages.length > 0) {
-            this.#dispatchMessage(this.#pendingMessages.pop());
+            this.#dialogScreen.turnFlashingDots("visible");
+            await this.#dispatchMessage(this.#pendingMessages.pop());
           }
+          this.#dialogScreen.turnFlashingDots("hidden");
           setTimeout(() => this.run(), 1000);
         }
 
@@ -688,7 +753,7 @@ ${agent.ongoingDiscussion}`);
         dispatcher.addAgentSilently(user);
 
         const userPrompt = document.querySelector(".user-prompt");
-        userPrompt.addEventListener("keyup", event => {
+        userPrompt.addEventListener("keyup", (event) => {
           if (event.keyCode !== 13) return;
 
           let message = userPrompt.value;
@@ -709,7 +774,7 @@ ${agent.ongoingDiscussion}`);
       const dispatcher = new MessageDispatcher(dialogScreen);
       await setUpInitialAgents(dispatcher);
       setUpEventHandlers(dispatcher);
-      dispatcher.run();
+      await dispatcher.run();
     })();
   </script>
 </html>
