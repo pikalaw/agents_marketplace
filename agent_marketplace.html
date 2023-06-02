@@ -41,6 +41,16 @@
         flex-direction: column;
         gap: 0.5em;
       }
+      .message-body {
+        border-radius: 1em;
+        padding: 0.5em;
+      }
+      .message-between-machines {
+        background-color: lavender;
+      }
+      .message-with-human {
+        background-color: antiquewhite;
+      }
       .recipient {
         color: cornflowerblue;
       }
@@ -563,16 +573,29 @@ Do not say anything else to me.
          * @param {string} message of the user.
          */
         addMessage({ sender, message }) {
+          const recipient = identifyRecipientFromMessage(message);
+          const messageBodyClass =
+            recipient === "User" || sender === "User"
+              ? "message-with-human"
+              : "message-between-machines";
+
+          const agent = dispatcher.getAgent(sender);
+          const thoughtVisibility =
+            agent.type === AgentType.LLM ? "visible" : "hidden";
+
           const li = htmlToElement(
             `<li class="message-entry">
               <div class="message-sender">
                 ${sender}
                 <span class="material-symbols-outlined transcript"
+                    style="visibility: ${thoughtVisibility}"
                     title="See thought transcript">
                   psychology
                 </span> 
               </div>
-              <div class="message-body">${addHighLight(message)}</div>
+              <div class="message-body ${messageBodyClass}">${addHighLight(
+              message
+            )}</div>
             </li>`
           );
           const ul = document.querySelector(".messages");
@@ -593,7 +616,11 @@ Do not say anything else to me.
             const transcriptSection = document.querySelector(
               ".transcript-section"
             );
-            transcriptSection.value = agent.ongoingDiscussion;
+            transcriptSection.value = `Agent ${sender}'s thought transcript:
+To close the popup, click here and hit ESC key.
+
+${agent.ongoingDiscussion}
+  `;
             transcriptSection.style.visibility = "visible";
           });
         }
