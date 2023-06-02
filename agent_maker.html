@@ -29,8 +29,10 @@
       Your host is your
       <a href="https://macromaker.googleplex.com/macros/TPaASiYUiPeRJmwTC62d"
         >personal assistant</a
-      >(TPaASiYUiPeRJmwTC62d). Try asking your host to invite the following
-      agents in Macromakers.
+      >
+      (TPaASiYUiPeRJmwTC62d). If you do not prefix your message with @[agent],
+      you will be speaking with your host. <br /><br />
+      Try asking your host to invite the following agents in Macromakers.
       <ul>
         <li>
           <a
@@ -177,14 +179,14 @@ You can ask multiple agents for help.
 If someone ask your name, just say your name.
 
 {FROM:User}: What is your name?
-{THOUGHT}: I will tell the user my name. I will reply with just my name. I will not say, "I am" or "My name is".
+{THOUGHT}: I will tell the user my name. I will reply with just my name. I will not say, "I am" or "My name is". But I will end my reply with a period.
 {SEND}: @User Your name here.
 
 If someone ask what you can do, give a short summary of what you can do.
 
 {FROM:User}: What can you do?
-{THOUGHT}: I will give a succinct summary of what I am capable of.
-{SEND}: @User Your summary of what you can do.
+{THOUGHT}: I will give a summary of what I am capable of.
+{SEND}: @User My summary of what I can do.
 
 You must never send youself a message. Do not do the following:
 
@@ -213,7 +215,15 @@ Now, you try.
         return message.match(/@[A-Za-z0-9\-\_]+/);
       }
 
+      const AgentType = {
+        HUMAN: 1, // This is the human user.
+        LLM: 2, // This is an agent backed by a LLM.
+        TOOL: 3, // This is a tool that takes only commands in a specified format.
+      };
+
       class Agent {
+        type = AgentType.LLM;
+
         /**
          * ID of the macro.
          * @type {string}
@@ -267,10 +277,6 @@ Now, you try.
           ]);
           this.name = extractAgentName(name);
           this.selfIntroduction = selfIntroduction;
-        }
-
-        isMachineAgent() {
-          return true;
         }
 
         /**
@@ -328,7 +334,8 @@ Now, you try.
               this.ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
               this.ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
 
-              const match = noHallucinationResponse.match(/\{SEND\}: (.*)/);
+              const match =
+                noHallucinationResponse.match(/\{SEND\}:\s*([^]*)/);
               if (!match) continue;
 
               const messageText = match[1];
@@ -349,13 +356,11 @@ Now, you try.
        * user.
        */
       class User {
+        type = AgentType.HUMAN;
+
         name = "User";
 
         selfIntroduction = "You";
-
-        isMachineAgent() {
-          return false;
-        }
 
         async accepts({
           user,
@@ -369,10 +374,12 @@ Now, you try.
       }
 
       class RoomService {
+        type = AgentType.TOOL;
+
         name = "Hilton";
 
         selfIntroduction = `
-I am a tool. I do not understand plain English.
+I am a tool. I do not understand colloquial English. Do not speak to me in colloquial English.
 I can only accept one the following commands:
 
   invite(...)
@@ -384,28 +391,26 @@ I can invite agents to the chatroom.
 I can also evict agents from the chatroom.
 I can also tell you who is in the chatroom.
 
-To invite agents to the chatroom, issue one of the following commands in that format.
+To invite agents to the chatroom, issue one of the following commands in the following format.
 
 Commands:
   invite(abc123)
   invite(abc123, xyz456)
   invite(abc123, xyz456, uyt877)
 
-To evict agents to the chatroom, issue one of the following commands in that format.
+To evict agents to the chatroom, issue one of the following commands in the following format.
 
 Commands:
   evict(Alice)
   evict(Alice, Betty)
   evict(Alice, Betty, Carol)
 
-To list the agents currently in the chatroom, issue this commands in this format.
+To list the agents currently in the chatroom, issue this commands in the following format.
 
 Command:
   list
 
-You must use one of commands above. Do not speak with me in plain English.
-Do not say anything else to me except the commands above.
-Just think of me as a code engine.
+Do not say anything else to me.
 `;
 
         /**
@@ -418,10 +423,6 @@ Just think of me as a code engine.
          */
         constructor(dispatcher) {
           this.#dispatcher = dispatcher;
-        }
-
-        isMachineAgent() {
-          return true;
         }
 
         async accepts({
@@ -451,7 +452,7 @@ Just think of me as a code engine.
 
           match = request.match(/list/);
           if (match) {
-            return `@${user} ${this.#dispatcher.listAgent().join(', ')}`;
+            return `@${user} ${this.#dispatcher.listAgent().join(", ")}`;
           }
 
           return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list.`;
@@ -561,7 +562,7 @@ Just think of me as a code engine.
          * @returns {Array<string>} a list of agent's names.
          */
         listAgent() {
-          return [...this.#agents.values()].map(agent => agent.name);
+          return [...this.#agents.values()].map((agent) => agent.name);
         }
 
         /**
@@ -619,8 +620,9 @@ Just think of me as a code engine.
          * @returns {Array<Agent>} who are agents backed by LLM or a tool.
          */
         #getMachineAgent() {
-          return [...this.#agents.values()].filter((agent) =>
-            agent.isMachineAgent()
+          return [...this.#agents.values()].filter(
+            (agent) =>
+              agent.type === AgentType.LLM || agent.type === AgentType.TOOL
           );
         }
       }
