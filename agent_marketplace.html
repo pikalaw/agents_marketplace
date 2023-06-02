@@ -55,6 +55,11 @@
       .recipient {
         color: cornflowerblue;
       }
+      .temperature-control {
+        align-items: center;
+        display: flex;
+        gap: 0.5em;
+      }
       .transcript {
         cursor: pointer;
       }
@@ -136,8 +141,8 @@
           you based on your preferences.
         </p>
         <p>
-          Try asking Bob to invite the following agents in Macromakers (using their macro ID).
-          Bob will be more productive if he has helpers!
+          Try asking Bob to invite the following agents in Macromakers (using
+          their macro ID). Bob will be more productive if he has helpers!
         </p>
         <ul>
           <li>
@@ -198,6 +203,16 @@
           rows="4"
           placeholder="@agent Your request"
         ></textarea>
+        <div class="temperature-control">
+          Temperature
+          <span id="temperature-text"></span>
+          <input
+            type="range"
+            min="0"
+            max="10"
+            id="temperature-slider"
+          />
+        </div>
       </section>
     </section>
     <textarea class="transcript-section"></textarea>
@@ -321,6 +336,26 @@ You must never send youself a message. Do not do the following:
 {THOUGHT}: My name is Ivan. I will ask myself for help!
 {SEND}: @Ivan Asking myself for help, which I should never do because it could cause an infinite loop!
 
+You must never have the following thoughts:
+
+[BAD]
+{THOUGHT}: I cannot do that. Only Agent1 can do that. I'm just going to tell the user I cannot.
+{SEND}: @User I cannot do that. Only Agent1 can do that.
+
+[BAD]
+{THOUGHT}: I do not know that. Only Agent1 knows that. I'm just going to tell the user I don't know.
+{SEND}: @User I do not know that. Only Agent1 knows that.
+
+Instead, you should have these thoughts:
+
+[GOOD]
+{THOUGHT}: I cannot do this. Only Agent1 can do that. So, I'm going to ask Agent1.
+{SEND}: @Agent1 Can you do this?
+
+[GOOD]
+{THOUGHT}: I do not know that. Only Agent1 knows that. So, I'm going to ask Agent1.
+{SEND}: @Agent1 Do you know this?
+
 You can only call agents who are in the same chatroom as you.
 Do not ask any other agent who is not in the chatroom!
 The following agents below are in the same chatroom as you.
@@ -386,16 +421,19 @@ Now, you try.
         /**
          * Initialize some basic agent information so that other agents can
          * discover this agent.
+         * @param {number} temperature the models should use.
          */
-        async init() {
+        async init(temperature) {
           const namePromise = this.accepts({
             user: SYSTEM,
             request: "What is your name?",
+            temperature,
           }).then(stripRecipientFromMessage);
 
           const selfIntroductionPromise = this.accepts({
             user: SYSTEM,
             request: "What can you do?",
+            temperature,
           }).then(stripRecipientFromMessage);
 
           const [name, selfIntroduction] = await Promise.all([
@@ -715,7 +753,7 @@ ${agent.ongoingDiscussion}
          */
         async addAgentWithAnnouncement(macroId) {
           const agent = new Agent({ macroId });
-          await agent.init();
+          await agent.init(this.temperature);
 
           this.#agents.set(agent.name, agent);
 
@@ -864,6 +902,17 @@ ${agent.ongoingDiscussion}
             transcriptSection.style.visibility = "hidden";
           }
         });
+
+        const temperatureText = document.querySelector("#temperature-text");
+        temperatureText.textContent = dispatcher.temperature;
+
+        const temperatureSlider = document.querySelector("#temperature-slider");
+        temperatureSlider.addEventListener("input", (event) => {
+          const newTemperature = event.target.value / 10;
+          temperatureText.textContent = newTemperature;
+
+          dispatcher.temperature = newTemperature;
+        })
       }
 
       const dialogScreen = new DialogScreen();
