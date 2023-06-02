@@ -36,6 +36,9 @@
         display: flex;
         flex-direction: column;
       }
+      .recipient {
+        color: cornflowerblue;
+      }
       .transcript {
         cursor: pointer;
       }
@@ -532,6 +535,13 @@ Do not say anything else to me.
         return temp.content.firstChild;
       }
 
+      function addHighLight(message) {
+        return message.replace(
+          /@[A-Za-z0-9\-\_]+/,
+          (match) => `<span class="recipient">${match}</span>`
+        );
+      }
+
       class DialogScreen {
         /**
          * @param {string} user ID of the sender.
@@ -547,7 +557,7 @@ Do not say anything else to me.
                   psychology
                 </span> 
               </div>
-              <div class="message-body">${message}</div>
+              <div class="message-body">${addHighLight(message)}</div>
             </li>`
           );
           const ul = document.querySelector(".messages");
