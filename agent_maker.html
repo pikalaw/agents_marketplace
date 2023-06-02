@@ -799,8 +799,11 @@ Do not say anything else to me.
         });
 
         const transcriptSection = document.querySelector(".transcript-section");
-        transcriptSection.addEventListener("keyup", () => {
-          transcriptSection.style.visibility = "hidden";
+        transcriptSection.addEventListener("keyup", (event) => {
+          if (event.keyCode === 27) {
+            // Remove the transcript pop if user hits ESC.
+            transcriptSection.style.visibility = "hidden";
+          }
         });
       }
 
