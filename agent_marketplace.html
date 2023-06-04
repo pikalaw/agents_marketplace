@@ -158,7 +158,12 @@
           their macro ID). Bob will be more productive if he has helpers!
         </p>
         <ul id="merchants"></ul>
-        <p>Some interesting characters to add to spice up the chat.</p>
+        <p>
+          These are your friends's agents.
+          Ask Bob to arrange a lunch event with them.
+          Ask Bob to order food that your doctor would agree.
+          Ask Bob to order food that your friends would like.
+        </p>
         <ul id="celebrities"></ul>
         <p>
           If you do not prefix your message with <strong>@[agent name]</strong>,
@@ -344,7 +349,7 @@ If someone ask what you can do, give a short summary of what you can do.
 
 {FROM:User}: What can you do?
 {THOUGHT}: I will give an introduction of who I am, what my profession is, and a comprehensive description of what I am capable of.
-{SEND}: @User My response here.
+{SEND}: @User I give my response here.
 
 You must never send youself a message. Do not do the following:
 
@@ -497,7 +502,7 @@ If someone ask your name, just say your name.
 {PLAN:1} I will tell the user my name. I will reply with just my name. I will not say, "I am" or "My name is". But I will end my reply with a period.
 {EVALUATE}: PLAN:1 is the only plan.
 {DECISION:PROCEED}: I will proceed with PLAN:1.
-{SEND}: @User Your name.
+{SEND}: @User I give my name here.
 
 If someone ask what you can do, give a short summary of what you can do.
 
@@ -506,7 +511,7 @@ If someone ask what you can do, give a short summary of what you can do.
 {PLAN:1} I will give an introduction of who I am, what my profession is, and a comprehensive description of what I am capable of.
 {EVALUATE}: PLAN:1 is the only plan.
 {DECISION:PROCEED}: I will proceed with PLAN:1.
-{SEND}: @User My self-introduction.
+{SEND}: @User I give my response here.
 
 You must never send youself a message. Do not do the following:
 
@@ -639,6 +644,14 @@ You may need to wait a bit and refresh the browser. Sorry!
             request: "What is your name?",
             temperature,
             promptType,
+            accepts: [(message) => {
+              try {
+                extractAgentName(message);
+                return true;
+              } catch (e) {
+                return false;
+              }
+            }]
           }).then(stripRecipientFromMessage);
 
           const selfIntroductionPromise = this.accepts({
@@ -756,7 +769,7 @@ You may need to wait a bit and refresh the browser. Sorry!
       class RoomService {
         type = AgentType.TOOL;
 
-        name = "Hilton";
+        name = "RoomService";
 
         selfIntroduction = `
 I am a tool. I do not understand colloquial English.
@@ -1114,15 +1127,15 @@ ${agent.ongoingDiscussion}
         }
 
         const merchants = document.querySelector("#merchants");
-        merchants.append(li("Restaurant", "FjZ0ZUkYyhWe1fvOnJWr"));
-        merchants.append(li("Nutritionist", "fI54nAfA97YQBCS8wLIK"));
-        merchants.append(li("Doctor", "bW0n6YI3EGDK8lAnzANB"));
-        merchants.append(li("Banker", "74ewuEBiGbsbRIYSIFC4"));
+        merchants.append(li("Ramsey's Restaurant", "FjZ0ZUkYyhWe1fvOnJWr"));
+        merchants.append(li("Susan the Nutritionist", "fI54nAfA97YQBCS8wLIK"));
+        merchants.append(li("House the Doctor", "bW0n6YI3EGDK8lAnzANB"));
+        merchants.append(li("Chase the Banker", "74ewuEBiGbsbRIYSIFC4"));
 
         const celebrities = document.querySelector("#celebrities");
-        celebrities.append(li("Joffrey Baratheon", "Zvo7knT52XjZ3uNShXhm"));
-        celebrities.append(li("Bruce Wayne", "2rbuuFBm68PULjg3J6N2"));
-        celebrities.append(li("Hannibal Lecter", "nJov24R6dLXp8w5NUqFn"));
+        celebrities.append(li("Rachel", "s6Z2jLPXqDfdUdxKLs1g"));
+        celebrities.append(li("Chandler", "OvPoJyS5dHH6K5xw6RF0"));
+        celebrities.append(li("Hannibal", "nJov24R6dLXp8w5NUqFn"));
       }
 
       /**
