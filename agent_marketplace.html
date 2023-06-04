@@ -58,6 +58,7 @@
       .model-control {
         align-items: center;
         display: flex;
+        justify-content: space-between;
       }
       .overlay {
         position: fixed;
@@ -202,9 +203,8 @@
           you will be speaking with Bob.
         </p>
         <p>
-          Some ideas to try.
-          Ask Bob to order food that is good under your current health condition.
-          Or ask Bob if you can even afford lunch!
+          Some ideas to try. Ask Bob to order food that is good for your current
+          health. Or ask Bob if you can even afford lunch!
         </p>
         <p>Wait for Bob to enter the chat and have fun!</p>
       </article>
@@ -232,6 +232,15 @@
               <option value="tot" selected="selected">Tree of Thoughts</option>
             </select>
           </div>
+          <p class="send-feedback">
+            Send feedbacks to
+            <a
+              href="mailto:labs-action-team@google.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              >labs-action-team@</a
+            >
+          </p>
         </div>
       </section>
     </section>
@@ -554,7 +563,7 @@ You know these agents who may be able to help you.
 ${agents.map(buildHelperPrompt).join("\n")}
 
 Now, you try.
-`; 
+`;
       }
 
       function extractAgentName(message) {
@@ -661,8 +670,10 @@ Now, you try.
             [inputKey.user]: user,
             [inputKey.request]: request,
             [inputKey.ongoing_discussion]: this.ongoingDiscussion,
-            [inputKey.cooperative_agent_prompt]:
-              buildCooperativeAgentPrompt(helpers, promptType),
+            [inputKey.cooperative_agent_prompt]: buildCooperativeAgentPrompt(
+              helpers,
+              promptType
+            ),
           };
 
           const formData = new FormData();
