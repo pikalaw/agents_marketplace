@@ -157,48 +157,9 @@
           Try asking Bob to invite the following agents in Macromakers (using
           their macro ID). Bob will be more productive if he has helpers!
         </p>
-        <ul>
-          <li>
-            <a
-              href="https://macromaker.googleplex.com/macros/FjZ0ZUkYyhWe1fvOnJWr"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Restaurant
-            </a>
-            (ID: FjZ0ZUkYyhWe1fvOnJWr)
-          </li>
-          <li>
-            <a
-              href="https://macromaker.googleplex.com/macros/fI54nAfA97YQBCS8wLIK"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Nutritionist
-            </a>
-            (ID: fI54nAfA97YQBCS8wLIK)
-          </li>
-          <li>
-            <a
-              href="https://macromaker.googleplex.com/macros/bW0n6YI3EGDK8lAnzANB"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Doctor
-            </a>
-            (ID: bW0n6YI3EGDK8lAnzANB)
-          </li>
-          <li>
-            <a
-              href="https://macromaker.googleplex.com/macros/74ewuEBiGbsbRIYSIFC4"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Banker
-            </a>
-            (ID: 74ewuEBiGbsbRIYSIFC4)
-          </li>
-        </ul>
+        <ul id="merchants"></ul>
+        <p>Some interesting characters to add to spice up the chat.</p>
+        <ul id="celebrities"></ul>
         <p>
           If you do not prefix your message with <strong>@[agent name]</strong>,
           you will be speaking with Bob.
@@ -842,7 +803,9 @@ To list the agents currently in the chatroom, issue this commands in the followi
 [GOOD]
   list
 
-I can accept only a single command at a time. If you have multiple agents you want to invite or evict, you must separate them into different chat messages. Then, send them to me one message at a time.
+I can accept only a single command at a time. If you have multiple agents you want to invite or evict, you must separate them into different chat messages.
+Ask me one agent at a time. Wait for me to reply before asking for another agent.
+
 For example, do not send these to me:
 
 [BAD]
@@ -1138,6 +1101,30 @@ ${agent.ongoingDiscussion}
         }
       }
 
+      function setUpAgentLists() {
+        function li(name, id) {
+          return htmlToElement(`
+          <li>
+            <a href="https://macromaker.googleplex.com/macros/${id}"
+                target="_blank" rel="noopener noreferrer">
+              ${name}
+            </a>
+            (ID: ${id})
+          </li>`);
+        }
+
+        const merchants = document.querySelector("#merchants");
+        merchants.append(li("Restaurant", "FjZ0ZUkYyhWe1fvOnJWr"));
+        merchants.append(li("Nutritionist", "fI54nAfA97YQBCS8wLIK"));
+        merchants.append(li("Doctor", "bW0n6YI3EGDK8lAnzANB"));
+        merchants.append(li("Banker", "74ewuEBiGbsbRIYSIFC4"));
+
+        const celebrities = document.querySelector("#celebrities");
+        celebrities.append(li("Joffrey Baratheon", "Zvo7knT52XjZ3uNShXhm"));
+        celebrities.append(li("Bruce Wayne", "2rbuuFBm68PULjg3J6N2"));
+        celebrities.append(li("Hannibal Lecter", "nJov24R6dLXp8w5NUqFn"));
+      }
+
       /**
        * @param {MessageDispatcher} dispatcher
        */
@@ -1202,6 +1189,8 @@ ${agent.ongoingDiscussion}
           console.log(`Changed to new prompt type: ${dispatcher.promptType}`);
         });
       }
+
+      setUpAgentLists();
 
       const dialogScreen = new DialogScreen();
       const dispatcher = new MessageDispatcher(dialogScreen);
