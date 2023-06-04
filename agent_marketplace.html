@@ -471,20 +471,19 @@ The procedure could take multiple turns. Here is an example:
 {DECISION:PROCEED}: I will select PLAN:5.
 {SEND}: @User The combined age of George Washington and Abraham Lincoln is 123.
 
-Backtracking. Sometimes, you may run into a deadend when solving a problem. When that happens, you need to go back to a previous plan that was not selected. Then, try again from that plan. You can select any previously unselected plan randomly. Here is an example:
 
 Plans should always be able to fulfill the user's request. Do not generate a plan that cannot do that. Example: Do not do the following:
 
 [BAD]
 {THOUGHT}: I cannot do that. No other agents can do that.
-{PLAN:2} I will tell the user I cannot help.
+{PLAN:5} I will tell the user I cannot help.
 
-Instead, you should backtrack like this:
+Instead, you should backtrack to a previous plan that was not selected. Then, try again from that plan. You can select any previously unselected plan randomly. Here is an example:
 
 [GOOD]
 {THOUGHT}: I cannot do that. No other agents can do that.
-{EVALUATE}: I have no new plan. I will need to go back to a previous plan that I had not selected.
-{DECISION:BACKTRACK}: I will go back to PLAN:1, which was not selected before. Here's what PLAN:1 was.
+{EVALUATE}: I cannot come up with new plans. I will need to go back to a previous plan that I had not selected. I have not selected PLAN:2 yet.
+{DECISION:BACKTRACK}: I will go back to PLAN:2, which was not selected before. Here's what PLAN:2 was.
 
 Here's another fuller example that is good:
 
@@ -597,7 +596,7 @@ Now, you try.
       /**
        * Will pop up an alert box if there is an RPC error.
        * @param {FormData} formData of the request
-       * @returns {Response} which can be empty if there is an RPC error.
+       * @returns {Response}
        */
       async function callMacroMakerEndpoint(formData) {
         try {
@@ -614,9 +613,7 @@ ${error.message}
 
 You may need to wait a bit and refresh the browser. Sorry!
 `);
-          return {
-            messages: [],
-          };
+          throw error;
         }
       }
 
@@ -787,31 +784,30 @@ You may need to wait a bit and refresh the browser. Sorry!
         name = "Hilton";
 
         selfIntroduction = `
-I am a tool. I do not understand colloquial English. Do not speak to me in colloquial English.
-I can only accept one the following commands:
-
-  invite(...)
-  evict(...)
-  list
-
+I am a tool. I do not understand colloquial English.
+Do not speak to me in colloquial English.
 I manage the agents in this chatroom.
 I can invite agents to the chatroom.
 I can also evict agents from the chatroom.
 I can also tell you who is in the chatroom.
 
+I can only accept one the following commands:
+
+  invite(agent's ID)
+  evict(agent's name)
+  list
+
 To invite agents to the chatroom, issue one of the following commands in the following format.
 
 [GOOD]
   invite(abc123)
-  invite(abc123, xyz456)
-  invite(abc123, xyz456, uyt877)
+  invite(xyz456)
 
 But do not send these messages below.
 
 [BAD]
   invite abc123
-  invite abc123 xyz456
-  invite abc123 xyz456 uyt877
+  invite xyz456
   Thank you!
   You're welcome!
 
@@ -819,22 +815,29 @@ To evict agents to the chatroom, issue one of the following commands in the foll
 
 [GOOD]
   evict(Alice)
-  evict(Alice, Betty)
-  evict(Alice, Betty, Carol)
+  evict(Betty)
 
 But do not send these messages below.
 
 [BAD]
   evict Alice
-  evict Alice Betty
-  evict Alice Betty Carol
+  evict Betty
 
 To list the agents currently in the chatroom, issue this commands in the following format.
 
-Command:
+[GOOD]
   list
 
-Do not say anything else to me.
+I can accept only a single command at a time. If you have multiple agents you want to invite or evict, you must separate them into different chat messages. Then, send them to me one message at a time.
+For example, do not send this to me:
+
+[BAD]
+  invite(abc, xyz)
+  invite(abc, xyz, 123)
+  evict(abc, xyz)
+  evict(abc, xyz, 123)
+
+Do not say anything else to me. No "Thank you!" No "You're welcome."
 `;
 
         /**
@@ -859,19 +862,15 @@ Do not say anything else to me.
         }) {
           let match = request.match(/invite\((.+)\)/);
           if (match) {
-            const macroIds = match[1].split(",").map((arg) => arg.trim());
-            for (let id of macroIds) {
-              this.#dispatcher.addAgentWithAnnouncement(id);
-            }
+            const macroId = match[1].trim();
+            this.#dispatcher.addAgentWithAnnouncement(macroId);
             return `@${user} Invited!`;
           }
 
           match = request.match(/evict\((.+)\)/);
           if (match) {
-            const agentNames = match[1].split(",").map((arg) => arg.trim());
-            for (let agentName of agentNames) {
-              this.#dispatcher.removeAgent(agentName);
-            }
+            const agentName = match[1].trim();
+            this.#dispatcher.removeAgent(agentName);
             return `@${user} Evicted!`;
           }
 
