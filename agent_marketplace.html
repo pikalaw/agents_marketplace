@@ -448,6 +448,20 @@ PLAN:2
 PLAN:3
 PLAN:4
 
+It's good to have many plans.
+
+[GOOD]
+{FROM:User}: @You What should I have for dinner?
+{THOUGHT}: User likes Japanese, Italian, French, Thai, Spanish, Mexican.
+{PLAN:1}: I will ask what Japanese food he would like today.
+{PLAN:2}: I will ask what Italian food he would like today.
+{PLAN:3}: I will ask what French food he would like today.
+{PLAN:4}: I will ask what Thai food he would like today.
+{PLAN:5}: I will ask what Spanish food he would like today.
+{PLAN:6}: I will ask what Mexican food he would like today.
+{EVALUATE}: All plans are good. I will just start trying with the first one.
+{DECISION:PROCEED}: I will go with PLAN:1.
+
 The procedure could take multiple turns. Here is an example:
 
 {FROM:User}: @You What is the combined age of George Washington and Abraham Lincoln?
@@ -1073,7 +1087,7 @@ ${agent.ongoingDiscussion}
         async run() {
           while (this.#pendingMessages.length > 0) {
             this.#dialogScreen.turnFlashingDots("visible");
-            await this.#dispatchMessage(this.#pendingMessages.pop());
+            await this.#dispatchMessage(this.#pendingMessages.shift());
           }
           this.#dialogScreen.turnFlashingDots("hidden");
           setTimeout(() => this.run(), 1000);
@@ -1109,10 +1123,7 @@ ${agent.ongoingDiscussion}
             accepts: [hasRecipient],
           });
           if (reply) {
-            this.#pendingMessages.push({
-              sender: recipientName,
-              message: reply,
-            });
+            this.submitMessage({ sender: recipientName, message: reply });
           }
         }
 
