@@ -428,7 +428,7 @@ Now, you try.
        */
       function buildTreeOfThoughtsAgentPrompt(agents) {
         return `
-        For each request from a user, you would come up with a few different plans on what to do next.
+For each request from a user, you would come up with a few different plans on what to do next.
 
 You will evaluate the plans and decide if you can proceed with one of the plans. At each step, you also have a list of agents whom you can ask for help. You will use this format:
 
@@ -473,6 +473,22 @@ The procedure could take multiple turns. Here is an example:
 
 Backtracking. Sometimes, you may run into a deadend when solving a problem. When that happens, you need to go back to a previous plan that was not selected. Then, try again from that plan. You can select any previously unselected plan randomly. Here is an example:
 
+Plans should always be able to fulfill the user's request. Do not generate a plan that cannot do that. Example: Do not do the following:
+
+[BAD]
+{THOUGHT}: I cannot do that. No other agents can do that.
+{PLAN:2} I will tell the user I cannot help.
+
+Instead, you should backtrack like this:
+
+[GOOD]
+{THOUGHT}: I cannot do that. No other agents can do that.
+{EVALUATE}: I have no new plan. I will need to go back to a previous plan that I had not selected.
+{DECISION:BACKTRACK}: I will go back to PLAN:1, which was not selected before. Here's what PLAN:1 was.
+
+Here's another fuller example that is good:
+
+[GOOD]
 {FROM:User}: @You What is the meaning of life?
 {THOUGHT}: I don't know the meaning of life. However, I know two agents who may know: Agent1 and Agent2. However, I do not know what they know.
 {PLAN:1}: Here's one plan. I will ask Agent1.
@@ -482,7 +498,7 @@ Backtracking. Sometimes, you may run into a deadend when solving a problem. When
 {SEND}: @Agent1 Do you know what is the meaning of life?
 {FROM:Agent1} @You Sorry, but I do not know. I cannot help you with that.
 {THOUGHT}: Agent1 does not know the answer. I cannot come up with the next step.
-{EVALUATE}: We ran into a deadend. Let's backtrack to a previously unselected plan.
+{EVALUATE}: I don't know how else to proceed from here. Let's backtrack to a previously unselected plan.
 {DECISION:BACKTRACK}: I will go back to PLAN:2, which was not selected before. The PLAN:2 is to ask Agent2.
 {SEND}: @Agent2 Do you know what is the meaning of life?
 {FROM:Agent2} @You Yes, I do know. The meaning of life is 42.
@@ -492,11 +508,11 @@ Backtracking. Sometimes, you may run into a deadend when solving a problem. When
 {DECISION:PROCEED}: I will select PLAN:3.
 {SEND}: @User The meaning of life is 42.
 
-Failure. Sometimes, you may run out of plans to choose. In that case, you tell the user that you cannot help.
+Sometimes, you may run out of plans to choose. In that case, you tell the user that you cannot help.
 
 {FROM:User}: @You What is the Tao?
 {THOUGHT}: I don't know the Tao. I don't know anyone else who does either.
-{EVALUATE}: I cannot find any plan to follow.
+{EVALUATE}: I cannot find new plan. Also, there is no previously unselected plan to go back to.
 {DECISION:FAIL}: I can't help the user. I will tell the user that.
 {SEND}: @User Sorry, but I cannot help you with that.
 
@@ -576,6 +592,32 @@ Now, you try.
 
       function hasRecipient(message) {
         return message.match(/@[A-Za-z0-9\-\_]+/);
+      }
+
+      /**
+       * Will pop up an alert box if there is an RPC error.
+       * @param {FormData} formData of the request
+       * @returns {Response} which can be empty if there is an RPC error.
+       */
+      async function callMacroMakerEndpoint(formData) {
+        try {
+          return await fetch(runMacroEndpointUrl, {
+            credentials: "include",
+            method: "POST",
+            body: formData,
+          }).then((res) => res.json());
+        } catch (error) {
+          window.alert(`
+Problem communicating with MacroMaker:
+
+${error.message}
+
+You may need to wait a bit and refresh the browser. Sorry!
+`);
+          return {
+            messages: [],
+          };
+        }
       }
 
       class Agent {
@@ -683,11 +725,7 @@ Now, you try.
           formData.append("temperature", temperature);
 
           for (let i = 0; i < 5; i++) {
-            const response = await fetch(runMacroEndpointUrl, {
-              credentials: "include",
-              method: "POST",
-              body: formData,
-            }).then((res) => res.json());
+            const response = await callMacroMakerEndpoint(formData);
 
             console.log(`${user}: ${request}\nResponse:`);
             console.log(response);
@@ -736,6 +774,9 @@ Now, you try.
           helpers = [],
           accepts = [],
         }) {
+          // This is just a stand-in for the human user. The code does not do
+          // anything for the human. It's up to the human themselves to chat
+          // with the agents. So, we return nothing.
           return undefined;
         }
       }
@@ -760,14 +801,14 @@ I can also tell you who is in the chatroom.
 
 To invite agents to the chatroom, issue one of the following commands in the following format.
 
-[GOOD examples]
+[GOOD]
   invite(abc123)
   invite(abc123, xyz456)
   invite(abc123, xyz456, uyt877)
 
 But do not send these messages below.
 
-[BAD examples]
+[BAD]
   invite abc123
   invite abc123 xyz456
   invite abc123 xyz456 uyt877
@@ -776,14 +817,14 @@ But do not send these messages below.
 
 To evict agents to the chatroom, issue one of the following commands in the following format.
 
-[GOOD examples]
+[GOOD]
   evict(Alice)
   evict(Alice, Betty)
   evict(Alice, Betty, Carol)
 
 But do not send these messages below.
 
-[BAD examples]
+[BAD]
   evict Alice
   evict Alice Betty
   evict Alice Betty Carol
@@ -1116,7 +1157,7 @@ ${agent.ongoingDiscussion}
 
           dispatcher.submitMessage({
             sender: user.name,
-            message,
+            message: message.trim(),
           });
 
           userPrompt.value = "";
