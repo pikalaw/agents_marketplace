@@ -166,7 +166,7 @@
             >
               Restaurant
             </a>
-            (FjZ0ZUkYyhWe1fvOnJWr)
+            (ID: FjZ0ZUkYyhWe1fvOnJWr)
           </li>
           <li>
             <a
@@ -176,7 +176,7 @@
             >
               Nutritionist
             </a>
-            (fI54nAfA97YQBCS8wLIK)
+            (ID: fI54nAfA97YQBCS8wLIK)
           </li>
           <li>
             <a
@@ -186,7 +186,7 @@
             >
               Doctor
             </a>
-            (bW0n6YI3EGDK8lAnzANB)
+            (ID: bW0n6YI3EGDK8lAnzANB)
           </li>
           <li>
             <a
@@ -196,7 +196,7 @@
             >
               Banker
             </a>
-            (74ewuEBiGbsbRIYSIFC4)
+            (ID: 74ewuEBiGbsbRIYSIFC4)
           </li>
         </ul>
         <p>
@@ -829,13 +829,15 @@ To list the agents currently in the chatroom, issue this commands in the followi
   list
 
 I can accept only a single command at a time. If you have multiple agents you want to invite or evict, you must separate them into different chat messages. Then, send them to me one message at a time.
-For example, do not send this to me:
+For example, do not send these to me:
 
 [BAD]
   invite(abc, xyz)
   invite(abc, xyz, 123)
   evict(abc, xyz)
   evict(abc, xyz, 123)
+  invite(abc), invite(xyz), invite(123)
+  evict(abc), evict(xyz), evict(123)
 
 Do not say anything else to me. No "Thank you!" No "You're welcome."
 `;
@@ -860,14 +862,14 @@ Do not say anything else to me. No "Thank you!" No "You're welcome."
           helpers = [],
           accepts = [],
         }) {
-          let match = request.match(/invite\((.+)\)/);
+          let match = request.match(/^\s*@\w+\s+invite\((.+)\)\s*$/);
           if (match) {
             const macroId = match[1].trim();
             this.#dispatcher.addAgentWithAnnouncement(macroId);
             return `@${user} Invited!`;
           }
 
-          match = request.match(/evict\((.+)\)/);
+          match = request.match(/^\s*@\w+\s+evict\((.+)\)\s*$/);
           if (match) {
             const agentName = match[1].trim();
             this.#dispatcher.removeAgent(agentName);
@@ -879,7 +881,7 @@ Do not say anything else to me. No "Thank you!" No "You're welcome."
             return `@${user} ${this.#dispatcher.listAgent().join(", ")}`;
           }
 
-          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list. However, do not speak to me in plain English, which I do not understand.`;
+          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list. Send me one command at a time. However, do not speak to me in plain English, which I do not understand.`;
         }
       }
 
