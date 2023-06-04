@@ -770,7 +770,7 @@ I can only accept one the following commands:
 
   invite(agent's ID)
   evict(agent's name)
-  list
+  list()
 
 To invite agents to the chatroom, issue one of the following commands in the following format.
 
@@ -801,7 +801,7 @@ But do not send these messages below.
 To list the agents currently in the chatroom, issue this commands in the following format.
 
 [GOOD]
-  list
+  list()
 
 I can accept only a single command at a time. If you have multiple agents you want to invite or evict, you must separate them into different chat messages.
 Ask me one agent at a time. Wait for me to reply before asking for another agent.
@@ -853,12 +853,12 @@ Do not say anything else to me. No "Thank you!" No "You're welcome."
             return `@${user} Evicted!`;
           }
 
-          match = request.match(/list/);
+          match = request.match(/list\(\)/);
           if (match) {
             return `@${user} ${this.#dispatcher.listAgent().join(", ")}`;
           }
 
-          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list. Send me one command at a time. However, do not speak to me in plain English, which I do not understand.`;
+          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list(). Send me one command at a time. However, do not speak to me in plain English, which I do not understand.`;
         }
       }
 
