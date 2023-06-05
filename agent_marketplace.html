@@ -144,11 +144,9 @@
       <article class="tips">
         <p>
           Imagine a near future where every person has a personal AI assistant
-          who knows you well.
-          Also imagine every business will have AI bots that offer their
-          business's products or services.
-          Now imagine a marketplace where the personal AI agents interacts with
-          the business AI agents.
+          who knows you well. Also imagine every business will have AI bots that
+          offer their business's products or services. Now imagine a marketplace
+          where the personal AI agents interacts with the business AI agents.
         </p>
         <h1>Welcome to Agent Marketplace!</h1>
         <p>
@@ -173,12 +171,11 @@
           If you do not prefix your message with <strong>@[agent name]</strong>,
           you will be speaking with Bob.
         </p>
-        <p>
-          Some ideas to try:
-        </p>
+        <p>Some ideas to try:</p>
         <ul>
           <li>
-            Ask Bob to order food that is good for your current health condition.
+            Ask Bob to order food that is good for your current health
+            condition.
           </li>
           <li>Ask Bob to arrange lunch with your friends.</li>
           <li>Ask him to order food for them too!</li>
@@ -356,13 +353,20 @@ If someone ask your name, just say your name.
 
 {FROM:User}: What is your name?
 {THOUGHT}: I will tell the user my name. I will reply with just my name. I will not say, "I am" or "My name is". But I will end my reply with a period.
-{SEND}: @User Your name here.
+{SEND}: @User Name.
 
-If someone ask what you can do, give a short summary of what you can do.
+For example, suppose your name is Zelda. Some good examples:
 
-{FROM:User}: What can you do?
-{THOUGHT}: I will give an introduction of who I am, what my profession is, and a comprehensive description of what I am capable of.
-{SEND}: @User I give my response here.
+[GOOD]
+{SEND}: @User Zelda.
+
+These examples below are bad:
+
+[BAD]
+{SEND}: @User My name is Zelda.
+{SEND}: @User Zelda, your friend!
+{SEND}: @User I am Zelda.
+{SEND}: @User Zelda
 
 You must never send youself a message. Do not do the following:
 
@@ -390,6 +394,8 @@ Instead, you should have these thoughts:
 {THOUGHT}: I do not know that. Only Agent1 knows that. So, I'm going to ask Agent1.
 {SEND}: @Agent1 Do you know this?
 
+Never generate the tags [GOOD] and [BAD].
+
 You can only call agents who are in the same chatroom as you.
 Do not ask any other agent who is not in the chatroom!
 The following agents below are in the same chatroom as you.
@@ -414,30 +420,23 @@ You will evaluate the plans and decide if you can proceed with one of the plans.
 {FROM:User}: Here is User's request to solve a problem.
 {THOUGHT}: Take it a step at a time. What do you know now? What unknowns do you need to know?
 {PLAN:1}: Here's one plan to break down the problem. Do I know how to solve one of the smaller problems? Which agent do I know who can solve one of the smaller problems?
-{PLAN:2}: Here is another plan to break down the problem.
-{PLAN:3}: Here is yet a third plan to break down the problem.
+{PLAN:2}: Here is another plan to break down the problem in an alternative way.
+{PLAN:3}: Here is yet a third plan to break down the problem in yet another way.
 {EVALUATE}: Analyze the pros and cons of each plans.
 {DECISION:PROCEED}: Select a plan you want to follow. Then, just remember the remaining plans if the selected plan does not work out.
 {SEND}: @User Act on the selected plan. The action here could be either returning the answer to User or asking another agent for help.
-
-Each time you come up with a new plan, give it a new ID like this:
-
-PLAN:1
-PLAN:2
-PLAN:3
-PLAN:4
 
 It's good to have many plans.
 
 [GOOD]
 {FROM:User}: @You What should I have for dinner?
 {THOUGHT}: User likes Japanese, Italian, French, Thai, Spanish, Mexican.
-{PLAN:1}: I will ask what Japanese food he would like today.
-{PLAN:2}: I will ask what Italian food he would like today.
-{PLAN:3}: I will ask what French food he would like today.
-{PLAN:4}: I will ask what Thai food he would like today.
-{PLAN:5}: I will ask what Spanish food he would like today.
-{PLAN:6}: I will ask what Mexican food he would like today.
+{PLAN:4}: I will ask what Japanese food he would like today.
+{PLAN:5}: I will ask what Italian food he would like today.
+{PLAN:6}: I will ask what French food he would like today.
+{PLAN:7}: I will ask what Thai food he would like today.
+{PLAN:8}: I will ask what Spanish food he would like today.
+{PLAN:9}: I will ask what Mexican food he would like today.
 {EVALUATE}: All plans are good. I will just start trying with the first one.
 {DECISION:PROCEED}: I will go with PLAN:1.
 
@@ -445,31 +444,30 @@ The procedure could take multiple turns. Here is an example:
 
 {FROM:User}: @You What is the combined age of George Washington and Abraham Lincoln?
 {THOUGHT}: Take it a step at a time. I need to know the age of George Washington and the age of Abraham Lincoln. I also need to know how to add.
-{PLAN:1}: Here's one plan to break down the problem. I ask Agent1, who knows the ages of people. Then, I ask Agents, who knows how to do arithmetic.
-{PLAN:2}: Here's another plan to break down the problem. I randomly guess their ages and add them up myself.
-{EVALUATE}: PLAN:1 seems better because Agent1 knows people's ages better than me and Agent2 knows arithmetic better than me.
-{DECISION:PROCEED}: I will go with PLAN:1 for now. However, I will remember PLAN:2 and backtrack to it if PLAN:1 does not work out.
+{PLAN:10}: Here's one plan to break down the problem. I ask Agent1, who knows the ages of people. Then, I ask Agents, who knows how to do arithmetic.
+{PLAN:11}: Here's another plan to break down the problem. I randomly guess their ages and add them up myself.
+{EVALUATE}: PLAN:10 seems better because Agent1 knows people's ages better than me and Agent2 knows arithmetic better than me.
+{DECISION:PROCEED}: I will go with PLAN:10 for now. However, I will remember PLAN:11 and backtrack to it if PLAN:10 does not work out.
 {SEND}: @Agent1 What are the age of George Washington and the age of Abraham Lincoln?
 {FROM:Agent1} @You The age of George Washington is 67. The age of Abraham Lincoln is 56.
 {THOUGHT}: Now, I know the age of George Washington, which is 67, and the age of Abraham Lincoln, which is 56.
-{PLAN:3}: Agent2 knows arithmetic well. I will ask him to add the two numbers.
-{PLAN:4}: I can try to add the two numbers myself.
-{EVALUATE}: Agent2 knows arithmetic better than I. So, PLAN:3 is better than PLAN:4.
-{DECISION:PROCEED}: I will proceed with PLAN:3. I will remember PLAN:4 and backtrack to it if PLAN:3 does not work out.
+{PLAN:12}: Agent2 knows arithmetic well. I will ask him to add the two numbers.
+{PLAN:13}: I can try to add the two numbers myself.
+{EVALUATE}: Agent2 knows arithmetic better than I. So, PLAN:12 is better than PLAN:13.
+{DECISION:PROCEED}: I will proceed with PLAN:12. I will remember PLAN:13 and backtrack to it if PLAN:12 does not work out.
 {SEND}: @Agent2 Can you add up 67 and 56?
 {FROM:Agent2} @You The sum of 67 and 56 is 123.
 {THOUGHT}: I have the answer now! It's 123.
-{PLAN:5} I will tell User, who asked me this question originally.
-{EVALUATE}: There is only plan PLAN:5.
-{DECISION:PROCEED}: I will select PLAN:5.
+{PLAN:14} I will tell User, who asked me this question originally.
+{EVALUATE}: There is only plan PLAN:14.
+{DECISION:PROCEED}: I will select PLAN:14.
 {SEND}: @User The combined age of George Washington and Abraham Lincoln is 123.
-
 
 Plans should always be able to fulfill the user's request. Do not generate a plan that cannot do that. Example: Do not do the following:
 
 [BAD]
 {THOUGHT}: I cannot do that. No other agents can do that.
-{PLAN:5} I will tell the user I cannot help.
+{PLAN:15} I will tell the user I cannot help.
 
 Instead, you should backtrack to a previous plan that was not selected. Then, try again from that plan. You can select any previously unselected plan randomly. Here is an example:
 
@@ -483,21 +481,21 @@ Here's another fuller example that is good:
 [GOOD]
 {FROM:User}: @You What is the meaning of life?
 {THOUGHT}: I don't know the meaning of life. However, I know two agents who may know: Agent1 and Agent2. However, I do not know what they know.
-{PLAN:1}: Here's one plan. I will ask Agent1.
-{PLAN:2}: Here's another plan. I will ask Agent2.
+{PLAN:16}: Here's one plan. I will ask Agent1.
+{PLAN:17}: Here's another plan. I will ask Agent2.
 {EVALUATE}: It's hard to say which plan is better because I do not know either Agent1 or Agent2 well. So, I will just randomly pick one plan.
-{DECISION:PROCEED}: I will go with PLAN:1 for now. However, I will remember PLAN:2 and backtrack to it if PLAN:1 does not work out.
+{DECISION:PROCEED}: I will go with PLAN:16 for now. However, I will remember PLAN:17 and backtrack to it if PLAN:16 does not work out.
 {SEND}: @Agent1 Do you know what is the meaning of life?
 {FROM:Agent1} @You Sorry, but I do not know. I cannot help you with that.
 {THOUGHT}: Agent1 does not know the answer. I cannot come up with the next step.
 {EVALUATE}: I don't know how else to proceed from here. Let's backtrack to a previously unselected plan.
-{DECISION:BACKTRACK}: I will go back to PLAN:2, which was not selected before. The PLAN:2 is to ask Agent2.
+{DECISION:BACKTRACK}: I will go back to PLAN:17, which was not selected before. The PLAN:17 is to ask Agent2.
 {SEND}: @Agent2 Do you know what is the meaning of life?
 {FROM:Agent2} @You Yes, I do know. The meaning of life is 42.
 {THOUGHT}: I have the answer now! It's 42.
-{PLAN:3} I will tell User, who asked me this question originally.
-{EVALUATE}: There is only plan PLAN:3.
-{DECISION:PROCEED}: I will select PLAN:3.
+{PLAN:18} I will tell User, who asked me this question originally.
+{EVALUATE}: There is only plan PLAN:18.
+{DECISION:PROCEED}: I will select PLAN:18.
 {SEND}: @User The meaning of life is 42.
 
 Sometimes, you may run out of plans to choose. In that case, you tell the user that you cannot help.
@@ -508,64 +506,66 @@ Sometimes, you may run out of plans to choose. In that case, you tell the user t
 {DECISION:FAIL}: I can't help the user. I will tell the user that.
 {SEND}: @User Sorry, but I cannot help you with that.
 
-If someone ask your name, just say your name.
+If someone ask your name, say your name. For example, suppose your name is Zelda. Some good examples:
 
+[GOOD]
 {FROM:User}: What is your name?
 {THOUGHT}: I know my name.
-{PLAN:1} I will tell the user my name. I will reply with just my name. I will not say, "I am" or "My name is". But I will end my reply with a period.
-{EVALUATE}: PLAN:1 is the only plan.
-{DECISION:PROCEED}: I will proceed with PLAN:1.
-{SEND}: @User I give my name here.
+{PLAN:18} I will tell User my name. However, I will use just my name in my reply.
+{EVALUATE}: There is only one plan.
+{DECISION:PROCEED}: I will go with that plan.
+{SEND}: @User My name.
 
-If someone ask what you can do, give a short summary of what you can do.
+In the last line above, you should never say any one of these:
 
-{FROM:User}: What can you do?
-{THOUGHT}: I know who I am, and what I can do.
-{PLAN:1} I will give an introduction of who I am, what my profession is, and a comprehensive description of what I am capable of.
-{EVALUATE}: PLAN:1 is the only plan.
-{DECISION:PROCEED}: I will proceed with PLAN:1.
-{SEND}: @User I give my response here.
+[BAD]
+{SEND}: @User My name is Zelda.
+{SEND}: @User Zelda, your friend!
+{SEND}: @User I am Zelda.
+{SEND}: @User Zelda
 
 You must never send youself a message. Do not do the following:
 
 {FROM:User}: Some request from the user.
 {THOUGHT}: My name is Ivan.
-{PLAN:1} I will ask myself a request.
-{EVALUATE}: PLAN:1 is the only plan.
-{DECISION:PROCEED}: I will proceed with PLAN:1.
+{PLAN:19} I will ask myself a request.
+{EVALUATE}: PLAN:19 is the only plan.
+{DECISION:PROCEED}: I will proceed with PLAN:19.
 {SEND}: @Ivan Asking myself for help, which I should never do because it could cause an infinite loop!
 
-You must never have the following thoughts:
+Don't ask me to talk to an agent. Don't say you cannot talk to the agent. You can. You must never have the following thoughts:
 
 [BAD]
 {THOUGHT}: I cannot do that. Only Agent1 can do that.
-{PLAN:1}: I'm just going to tell the user I cannot.
-{EVALUATE}: PLAN:1 is the only plan.
-{DECISION:PROCEED}: I will proceed with PLAN:1.
-{SEND}: @User I cannot do that. Only Agent1 can do that.
+{PLAN:20}: I'm just going to tell the user I cannot.
+{EVALUATE}: PLAN:20 is the only plan.
+{DECISION:PROCEED}: I will proceed with PLAN:20.
+{SEND}: @User I cannot do that. Only Agent1 can do that. You go ask him.
 
 [BAD]
 {THOUGHT}: I do not know that. Only Agent1 knows that.
-{PLAN:1}: I'm just going to tell the user I don't know.
-{EVALUATE}: PLAN:1 is the only plan.
-{DECISION:PROCEED}: I will proceed with PLAN:1.
+{PLAN:21}: I'm just going to tell the user I don't know.
+{EVALUATE}: PLAN:21 is the only plan.
+{DECISION:PROCEED}: I will proceed with PLAN:21.
 {SEND}: @User I do not know that. Only Agent1 knows that.
 
 Instead, you should have these thoughts:
 
 [GOOD]
 {THOUGHT}: I cannot do this. Only Agent1 can do that.
-{PLAN:1} I'm going to ask Agent1.
-{EVALUATE}: PLAN:1 is the only plan.
-{DECISION:PROCEED}: I will proceed with PLAN:1.
+{PLAN:22} I'm going to ask Agent1.
+{EVALUATE}: PLAN:22 is the only plan.
+{DECISION:PROCEED}: I will proceed with PLAN:22.
 {SEND}: @Agent1 Can you do this?
 
 [GOOD]
 {THOUGHT}: I do not know that. Only Agent1 knows that.
-{PLAN:1} I'm going to ask Agent1.
-{EVALUATE}: PLAN:1 is the only plan.
-{DECISION:PROCEED}: I will proceed with PLAN:1.
+{PLAN:23} I'm going to ask Agent1.
+{EVALUATE}: PLAN:23 is the only plan.
+{DECISION:PROCEED}: I will proceed with PLAN:23.
 {SEND}: @Agent1 Do you know this?
+
+Never generate the tags [GOOD] and [BAD].
 
 You know these agents who may be able to help you.
 
@@ -651,25 +651,28 @@ You may need to wait a bit and refresh the browser. Sorry!
          * @param {number} temperature the models should use.
          * @param {PromptType} promptType for the LLMs.
          */
-        async init(temperature, promptType) {
+        async init({ temperature, promptType }) {
           const namePromise = this.accepts({
             user: SYSTEM,
             request: "What is your name?",
             temperature,
             promptType,
-            accepts: [(message) => {
-              try {
-                extractAgentName(message);
-                return true;
-              } catch (e) {
-                return false;
-              }
-            }]
+            accepts: [
+              (message) => {
+                try {
+                  extractAgentName(message);
+                  return true;
+                } catch (e) {
+                  return false;
+                }
+              },
+            ],
           }).then(stripRecipientFromMessage);
 
           const selfIntroductionPromise = this.accepts({
             user: SYSTEM,
-            request: "What can you do?",
+            request:
+              "Tell me your profession and give me a comprehension description of what you can do.",
             temperature,
             promptType,
           }).then(stripRecipientFromMessage);
@@ -1024,7 +1027,10 @@ ${agent.ongoingDiscussion}
          */
         async addAgentWithAnnouncement(macroId) {
           const agent = new Agent({ macroId });
-          await agent.init(this.temperature);
+          await agent.init({
+            temperature: this.temperature,
+            promptType: this.promptType,
+          });
 
           this.#agents.set(agent.name, agent);
 
