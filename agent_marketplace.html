@@ -449,8 +449,17 @@ Do not repeat plan ID for new plans.
 {PLAN:2}: Another plan.
 ...
 {THOUGHT}: Second thought.
-{PLAN:1}: Bad! PLAN:1 has been used already!
-{PLAN:2}: Bad! PLAN:2 has been used already!
+{PLAN:1}: Bad! PLAN:1 has been used in a previous thought already!
+{PLAN:2}: Bad! PLAN:2 has been used in a previous thought already!
+### end
+
+[BAD]:
+### start
+{THOUGHT}: First thought.
+{PLAN:1}: A plan for the first thought.
+...
+{THOUGHT}: Second thought.
+{PLAN:1}: Bad! PLAN:1 has been used in a previous thought already!
 ### end
 
 The procedure could take multiple turns. Here is an example:
