@@ -830,13 +830,14 @@ You may need to wait a bit and refresh the browser. Sorry!
       class RoomService {
         type = AgentType.TOOL;
 
-        name = "RoomService";
+        name = "Hilton";
 
         selfIntroduction = `
 I manage the agents in this chatroom.
-I can invite agents to the chatroom.
-I can also evict agents from the chatroom.
-I can also tell you who is in the chatroom.
+Ask me to do any of the following for you:
+* I can invite agents to the chatroom.
+* I can also evict agents from the chatroom.
+* I can also tell you who is in the chatroom.
 
 I am a tool. I do not understand colloquial English.
 Do not speak to me in colloquial English.
@@ -946,7 +947,7 @@ Do not say anything else to me. No "Thank you!" No "You're welcome."
             return `@${user} ${this.#dispatcher.listAgent().join(", ")}`;
           }
 
-          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list(). Send me one command at a time. However, do not speak to me in plain English, which I do not understand.`;
+          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(id), evict(name) or list(). Send me one command at a time. However, do not speak to me in plain English, which I do not understand.`;
         }
       }
 
