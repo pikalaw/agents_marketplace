@@ -558,6 +558,12 @@ You may need to wait a bit and refresh the browser. Sorry!
                 /[\n\r\s]*\{FROM:[^]*/,
                 ""
               );
+              if (accepts.some((acceptFn) => !acceptFn(noHallucinationResponse))) {
+                // If this message does not match expected format, try the next
+                // message.
+                continue;
+              }
+
               this.ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
               this.ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
 
