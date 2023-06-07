@@ -161,11 +161,15 @@
           you based on your preferences.
         </p>
         <p>
-          Try asking Bob to invite the following agents in Macromakers (using
-          their macro ID). Bob will be more productive if he has helpers!
+          These merchants are already in the chatroom with you.
+          Bob should work with them to accomplish your goals.
         </p>
         <ul id="merchants"></ul>
-        <p>These are your friends's agents.</p>
+        <p>
+          These are your friends's agents.
+          They are not initially in the chatroom.
+          However, you can ask Bob to invite them to the chat.
+        </p>
         <ul id="celebrities"></ul>
         <p>
           If you do not prefix your message with <strong>@[agent name]</strong>,
@@ -177,6 +181,7 @@
             Ask Bob to order food that is good for your current health
             condition.
           </li>
+          <li>Ask Bob to invite your friends to the chatroom.</li>
           <li>Ask Bob to arrange lunch with your friends.</li>
           <li>Ask him to order food for them too!</li>
           <li>Ask Bob to pay the lunch bill.</li>
@@ -1002,6 +1007,12 @@ ${agent.ongoingDiscussion}
         dispatcher.admin = await dispatcher.addAgentWithAnnouncement(
           "TPaASiYUiPeRJmwTC62d"
         );
+
+        // Merchants.
+        await dispatcher.addAgentWithAnnouncement("FjZ0ZUkYyhWe1fvOnJWr");
+        await dispatcher.addAgentWithAnnouncement("fI54nAfA97YQBCS8wLIK");
+        await dispatcher.addAgentWithAnnouncement("bW0n6YI3EGDK8lAnzANB");
+        await dispatcher.addAgentWithAnnouncement("74ewuEBiGbsbRIYSIFC4");
 
         // Tools.
         dispatcher.addAgentSilently(new RoomService(dispatcher));
