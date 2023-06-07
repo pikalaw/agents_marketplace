@@ -899,6 +899,22 @@ To list the agents currently in the chatroom, issue this commands in the followi
 list()
 ###
 
+[BAD]:
+###
+list
+###
+
+When you send commands to me, do not include the period at the end of the command. For examples, these are bad:
+
+[BAD]:
+###
+invite(abc123).
+invite(xyz456).
+evict(Alice).
+evict(Betty).
+list().
+###
+
 I can accept only a single command at a time. If you have multiple agents you want to invite or evict, you must separate them into different chat messages.
 Ask me one agent at a time. Wait for me to reply before asking for another agent.
 
@@ -956,7 +972,7 @@ Do not say anything else to me. No "Thank you!" No "You're welcome."
             return `@${user} ${this.#dispatcher.listAgent().join(", ")}`;
           }
 
-          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(id), evict(name) or list(). Send me one command at a time. However, do not speak to me in plain English, which I do not understand.`;
+          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(id), evict(name) or list(). Do not include a trailing period. Send me one command at a time. However, do not speak to me in plain English, which I do not understand.`;
         }
       }
 
