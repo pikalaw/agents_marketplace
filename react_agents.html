@@ -18,7 +18,6 @@
       }
       .body > * {
         align-self: center;
-        max-width: 800px;
       }
       .dialog-section {
         background-color: aliceblue;
@@ -26,6 +25,10 @@
         display: flex;
         flex-direction: column;
         padding: 1em;
+        max-width: 800px;
+      }
+      .input-text {
+        width: 2em;
       }
       .message-sender {
         align-items: center;
@@ -52,13 +55,24 @@
       .message-with-human {
         background-color: antiquewhite;
       }
+      .model-control {
+        align-items: center;
+        display: flex;
+        gap: 0.5em;
+        justify-content: space-between;
+      }
+      .overlay {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
       .recipient {
         color: cornflowerblue;
       }
       .temperature-control {
         align-items: center;
         display: flex;
-        gap: 0.5em;
       }
       .transcript {
         cursor: pointer;
@@ -67,10 +81,9 @@
         background-color: lavender;
         border: 1px solid black;
         box-shadow: 10px 5px 5px grey;
-        position: absolute;
-        height: 90%;
+        height: 90vh;
         visibility: hidden;
-        width: 90%;
+        width: 90vw;
       }
       .user-prompt {
         width: 100%;
@@ -130,6 +143,13 @@
     <section class="dialog-section">
       <article class="tips">
         <p>
+          Imagine a near future where every person has a personal AI assistant
+          who knows you well. Also imagine every business will have AI bots that
+          offer their business's products or services. Now imagine a marketplace
+          where the personal AI agents interacts with the business AI agents.
+        </p>
+        <h1>Welcome to Agent Marketplace!</h1>
+        <p>
           Bob is your
           <a
             href="https://macromaker.googleplex.com/macros/TPaASiYUiPeRJmwTC62d"
@@ -144,57 +164,25 @@
           Try asking Bob to invite the following agents in Macromakers (using
           their macro ID). Bob will be more productive if he has helpers!
         </p>
-        <ul>
-          <li>
-            <a
-              href="https://macromaker.googleplex.com/macros/FjZ0ZUkYyhWe1fvOnJWr"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Restaurant
-            </a>
-            (FjZ0ZUkYyhWe1fvOnJWr)
-          </li>
-          <li>
-            <a
-              href="https://macromaker.googleplex.com/macros/fI54nAfA97YQBCS8wLIK"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Nutritionist
-            </a>
-            (fI54nAfA97YQBCS8wLIK)
-          </li>
-          <li>
-            <a
-              href="https://macromaker.googleplex.com/macros/bW0n6YI3EGDK8lAnzANB"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Doctor
-            </a>
-            (bW0n6YI3EGDK8lAnzANB)
-          </li>
-          <li>
-            <a
-              href="https://macromaker.googleplex.com/macros/74ewuEBiGbsbRIYSIFC4"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Banker
-            </a>
-            (74ewuEBiGbsbRIYSIFC4)
-          </li>
-        </ul>
+        <ul id="merchants"></ul>
+        <p>These are your friends's agents.</p>
+        <ul id="celebrities"></ul>
         <p>
           If you do not prefix your message with <strong>@[agent name]</strong>,
           you will be speaking with Bob.
         </p>
-        <p>
-          Some ideas to try.
-          Ask Bob to order food that is good under your current health condition.
-          Or ask Bob if you can even afford lunch!
-        </p>
+        <p>Some ideas to try:</p>
+        <ul>
+          <li>
+            Ask Bob to order food that is good for your current health
+            condition.
+          </li>
+          <li>Ask Bob to arrange lunch with your friends.</li>
+          <li>Ask him to order food for them too!</li>
+          <li>Ask Bob to pay the lunch bill.</li>
+          <li>Talk directly to other merchants or friends.</li>
+          <li>Ask one of them to talk to the others.</li>
+        </ul>
         <p>Wait for Bob to enter the chat and have fun!</p>
       </article>
       <section class="message-window">
@@ -212,22 +200,30 @@
           <div class="temperature-control">
             <label for="temperature-slider">Temperature:</label>
             <input type="range" min="0" max="10" id="temperature-slider" />
-            <span id="temperature-text"></span>
+            <div class="input-text" id="temperature-text"></div>
           </div>
-          <div class="prompt-type-control">
-            <label for="cars">Agent prompt structure:</label>
-            <select id="prompt-type">
-              <option value="react">ReAct</option>
-              <option value="tot">Tree of Thoughts</option>
-            </select>
-          </div>
+          <p class="send-feedback">
+            Send feedback to
+            <a
+              href="mailto:labs-action-team@google.com?subject=Agent Marketplace Feedback"
+              target="_blank"
+              rel="noopener noreferrer"
+              >labs-action-team@</a
+            >
+          </p>
         </div>
       </section>
     </section>
-    <textarea class="transcript-section"></textarea>
+    <textarea class="transcript-section overlay"></textarea>
   </body>
   <script>
     (async () => {
+      const AgentType = {
+        HUMAN: 1, // This is the human user.
+        LLM: 2, // This is an agent backed by a LLM.
+        TOOL: 3, // This is a tool that takes only commands in a specified format.
+      };
+
       const runMacroEndpointUrl =
         "https://api-dot-macromaker.googleplex.com/run-macro";
 
@@ -254,12 +250,12 @@
        *     @Recipient Message body
        * This function strips the @Recipient part and return the message body.
        * @param {string} message is the original message sent from an agent.
-       * @returns {string | undefined} the recipient if present.
+       * @returns {Array<string>} the recipients.
        */
-      function identifyRecipientFromMessage(message) {
-        const match = message.match(/@([A-Za-z0-9\-\_]+)/);
-        if (match) return match[1];
-        return undefined;
+      function identifyRecipientsFromMessage(message) {
+        const recipientNames = [];
+        const matches = message.matchAll(/@([A-Za-z0-9\-\_]+)/g);
+        return [...matches].map((match) => match[1]);
       }
 
       /**
@@ -268,8 +264,18 @@
        */
       function buildHelperPrompt(agent) {
         return `
-${agent.name} is a helper. Here is his or her self introduction: ${agent.selfIntroduction}
+${agent.name} is a helper agent. Here is his or her self introduction: ${agent.selfIntroduction}
 `;
+      }
+
+      /**
+       * Prompt mechanism for a cooperative agent.
+       * @param {Array<Agent>} agents who are helpers.
+       * @returns {string} the full prompt for a cooperative agent with helper
+       * descriptions.
+       */
+      function buildCooperativeAgentPrompt(agents) {
+        return buildReActAgentPrompt(agents);
       }
 
       /**
@@ -277,40 +283,42 @@ ${agent.name} is a helper. Here is his or her self introduction: ${agent.selfInt
        * @returns {string} the full prompt for a cooperative agent with helper
        * descriptions.
        */
-      function buildCooperativeAgentPrompt(agents) {
-        /**
-         * Prompt mechanism for a cooperative agent.
-         * @type {string}
-         */
+      function buildReActAgentPrompt(agents) {
         return `
 A user will ask you for something. You will break down the request into multiple steps and take one step at a time.
 
-You must respond in the following format:
+Follow the following format:
 
+"""
 {FROM:User}: @You A request from the user.
-{THOUGHT}: Your thought on the user's request. Think one step at time. If you cannot do the next step, find an agent who can help you on the next step and ask that agent to do it for you.
-{SEND}: @Agent You ask an agent for help here.
-{FROM:Agent} @You The agent responds back to you.
-{THOUGHT}: Your thought on the agent's response and all the information you have so far. If you have a conclusion, you can respond back to the user.
-{SEND}: @User Here's the answer!
+{THOUGHT}: Your thought on the user's request. Think one step at time. What do yo know already that is useful? What don't you know yet that you need to know? Do you have enough information to handle the request? What can you do as the next step?
+{SEND}: @User Your response to the request from the user.
+"""
 
-If you already have the answer, you can return the answer to the user.
-
+Example:
+"""
 {FROM:User}: What is meaning of life?
 {THOUGHT}: I know the answer already! I will tell the user.
 {SEND}: @User The meaning of life is 42.
+"""
 
-If you do not have the answer, you can send a message to ask other agents.
+If you do not have the answer, you should think of a helper agent who may be able to help you.
+Then, you should send that agent a message for help.
 
+Example:
+"""
 {FROM:User}: What is the sum of 5 and 7?
-{THOUGHT}: I cannot answer that question, but I know the agent Agent can answer that question for me!
+{THOUGHT}: I cannot answer that question, but I know agent Agent can answer that question for me!
 {SEND}: @Agent What is the sum of 5 and 7?
 {FROM:Agent}: The sum of 5 and 7 is 12.
 {THOUGHT}: I have the answer now. I will tell the user.
 {SEND}: @User I have the answer! It is 12.
+"""
 
-You can ask multiple agents for help.
+If one agent does not have all the answer, you can ask multiple agents.
 
+Example:
+"""
 {FROM:User}: What is the age difference in lifespan between Abraham Lincoln and George Washington?
 {THOUGHT}: I need to know Abraham Lincoln's and George Washington's ages first. I don't know that, but I know Agent1 knows people's ages. I will ask him.
 {SEND}: @Agent1 What are Abraham Lincoln's and George Washington's ages?
@@ -326,44 +334,59 @@ You can ask multiple agents for help.
 {FROM:Agent2}: The difference is 10.
 {THOUGHT}: I know the answer now! I will tell the User.
 {SEND}: @User The age difference between Abraham Lincoln and George Washington is 10.
+"""
+
+You can talk to multiple agents in single message.
+
+Example:
+"""
+{SEND}: @Alice @Carol When are you two coming to User's home?
+{SEND}: @Dave But you should probably stay home.
+"""
+
+You should never ask the User to ask the agent for help. Instead, you should ask the agent yourself on behalf of User.
+
+[BAD]
+"""
+{FROM:User}: Is my lunch order ready?
+{THOUGHT}: I do not know if User's lunch is ready. However, agent Agent knows.
+{SEND}: @User I do not know if your lunch is ready. You should go ask Agent instead.
+"""
+
+Instead, do this:
+
+[GOOD]
+"""
+{FROM:User}: Is my lunch order ready?
+{THOUGHT}: I do not know if User's lunch is ready. However, agent Agent knows.
+{SEND} @Agent Is User's lunch order ready yet? He's starving!
+{FROM:Agent}: Yes, User's lunch order is ready. It will be delivered now!
+{THOUGHT}: Agent told me User's lunch order is ready now.
+{SEND}: @User Your lunch order is ready for delivery.
+"""
 
 If someone ask your name, just say your name.
 
 {FROM:User}: What is your name?
 {THOUGHT}: I will tell the user my name. I will reply with just my name. I will not say, "I am" or "My name is". But I will end my reply with a period.
-{SEND}: @User Your name here.
+{SEND}: @User Name.
 
-If someone ask what you can do, give a short summary of what you can do.
-
-{FROM:User}: What can you do?
-{THOUGHT}: I will give an introduction of who I am, what is my profession, and what I am capable of.
-{SEND}: @User My response here.
-
-You must never send youself a message. Do not do the following:
-
-{FROM:User}: Some request from the user.
-{THOUGHT}: My name is Ivan. I will ask myself for help!
-{SEND}: @Ivan Asking myself for help, which I should never do because it could cause an infinite loop!
-
-You must never have the following thoughts:
-
-[BAD]
-{THOUGHT}: I cannot do that. Only Agent1 can do that. I'm just going to tell the user I cannot.
-{SEND}: @User I cannot do that. Only Agent1 can do that.
-
-[BAD]
-{THOUGHT}: I do not know that. Only Agent1 knows that. I'm just going to tell the user I don't know.
-{SEND}: @User I do not know that. Only Agent1 knows that.
-
-Instead, you should have these thoughts:
+For example, suppose your name is Zelda. Some good examples:
 
 [GOOD]
-{THOUGHT}: I cannot do this. Only Agent1 can do that. So, I'm going to ask Agent1.
-{SEND}: @Agent1 Can you do this?
+"""
+{SEND}: @User Zelda.
+"""
 
-[GOOD]
-{THOUGHT}: I do not know that. Only Agent1 knows that. So, I'm going to ask Agent1.
-{SEND}: @Agent1 Do you know this?
+These examples below are bad:
+
+[BAD]
+"""
+{SEND}: @User My name is Zelda.
+{SEND}: @User Zelda, your friend!
+{SEND}: @User I am Zelda.
+{SEND}: @User Zelda
+"""
 
 You can only call agents who are in the same chatroom as you.
 Do not ask any other agent who is not in the chatroom!
@@ -382,15 +405,29 @@ Now, you try.
         return match[1];
       }
 
-      function hasRecipient(message) {
-        return message.match(/@[A-Za-z0-9\-\_]+/);
-      }
+      /**
+       * Will pop up an alert box if there is an RPC error.
+       * @param {FormData} formData of the request
+       * @returns {Response}
+       */
+      async function callMacroMakerEndpoint(formData) {
+        try {
+          return await fetch(runMacroEndpointUrl, {
+            credentials: "include",
+            method: "POST",
+            body: formData,
+          }).then((res) => res.json());
+        } catch (error) {
+          window.alert(`
+Problem communicating with MacroMaker:
 
-      const AgentType = {
-        HUMAN: 1, // This is the human user.
-        LLM: 2, // This is an agent backed by a LLM.
-        TOOL: 3, // This is a tool that takes only commands in a specified format.
-      };
+${error.message}
+
+You may need to wait a bit and refresh the browser. Sorry!
+`);
+          throw error;
+        }
+      }
 
       class Agent {
         type = AgentType.LLM;
@@ -432,18 +469,29 @@ Now, you try.
          * discover this agent.
          * @param {number} temperature the models should use.
          */
-        async init(temperature) {
+        async init({ temperature }) {
           const namePromise = this.accepts({
             user: SYSTEM,
             request: "What is your name?",
             temperature,
-          }).then(stripRecipientFromMessage);
+            accepts: [
+              (message) => {
+                try {
+                  extractAgentName(message);
+                  return true;
+                } catch (e) {
+                  return false;
+                }
+              },
+            ],
+          }).then(messages => stripRecipientFromMessage(messages[0]));
 
           const selfIntroductionPromise = this.accepts({
             user: SYSTEM,
-            request: "What can you do?",
+            request:
+              "Tell me your profession and give me a comprehension description of what you can do.",
             temperature,
-          }).then(stripRecipientFromMessage);
+          }).then(messages => stripRecipientFromMessage(messages[0]));
 
           const [name, selfIntroduction] = await Promise.all([
             namePromise,
@@ -461,7 +509,7 @@ Now, you try.
          * @param {Array<function(message: string): boolean>} accepts functions
          * of the LLM's response. If the list is empty, then the first response
          * is accepted.
-         * @returns {string} the next message.
+         * @returns {Array<string>} the next set of messages.
          */
         async accepts({
           user,
@@ -490,11 +538,7 @@ Now, you try.
           formData.append("temperature", temperature);
 
           for (let i = 0; i < 5; i++) {
-            const response = await fetch(runMacroEndpointUrl, {
-              credentials: "include",
-              method: "POST",
-              body: formData,
-            }).then((res) => res.json());
+            const response = await callMacroMakerEndpoint(formData);
 
             console.log(`${user}: ${request}\nResponse:`);
             console.log(response);
@@ -508,14 +552,12 @@ Now, you try.
               this.ongoingDiscussion += `\n{FROM:${user}}: ${request}`;
               this.ongoingDiscussion += `\n{THOUGHT}: ${noHallucinationResponse}`;
 
-              const match = noHallucinationResponse.match(/\{SEND\}:\s*([^]*)/);
-              if (!match) continue;
-
-              const messageText = match[1];
-
-              if (accepts.some((acceptFn) => !acceptFn(messageText))) continue;
-
-              return messageText;
+              // The first element would be everything before the first {SEND}:
+              // So, we skip that one.
+              return noHallucinationResponse
+                .split("{SEND}:")
+                .slice(1)
+                .map((m) => m.trim());
             }
           }
           throw new Error("Unable to get agent to return a valid response.");
@@ -542,7 +584,10 @@ Now, you try.
           helpers = [],
           accepts = [],
         }) {
-          return undefined;
+          // This is just a stand-in for the human user. The code does not do
+          // anything for the human. It's up to the human themselves to chat
+          // with the agents. So, we return nothing.
+          return [];
         }
       }
 
@@ -552,54 +597,92 @@ Now, you try.
         name = "Hilton";
 
         selfIntroduction = `
-I am a tool. I do not understand colloquial English. Do not speak to me in colloquial English.
+I manage the agents in this chatroom.
+Ask me to do any of the following for you:
+* I can invite agents to the chatroom.
+* I can also evict agents from the chatroom.
+* I can also tell you who is in the chatroom.
+
+I am a tool. I do not understand colloquial English.
+Do not speak to me in colloquial English.
 I can only accept one the following commands:
 
-  invite(...)
-  evict(...)
-  list
-
-I manage the agents in this chatroom.
-I can invite agents to the chatroom.
-I can also evict agents from the chatroom.
-I can also tell you who is in the chatroom.
+###
+invite(agent's ID)
+evict(agent's name)
+list()
+###
 
 To invite agents to the chatroom, issue one of the following commands in the following format.
 
-[GOOD examples]
-  invite(abc123)
-  invite(abc123, xyz456)
-  invite(abc123, xyz456, uyt877)
+[GOOD]:
+###
+invite(abc123)
+invite(xyz456)
+###
 
 But do not send these messages below.
 
-[BAD examples]
-  invite abc123
-  invite abc123 xyz456
-  invite abc123 xyz456 uyt877
-  Thank you!
-  You're welcome!
+[BAD]:
+###
+invite abc123
+invite abc123.
+invite xyz456
+invite xyz456.
+invite abc123 xyz456
+invite abc123, xyz456
+invite abc123 xyz456.
+invite abc123, xyz456.
+invite(abc123).
+invite(xyz456).
+Thank you!
+You're welcome!
+###
 
 To evict agents to the chatroom, issue one of the following commands in the following format.
 
-[GOOD examples]
-  evict(Alice)
-  evict(Alice, Betty)
-  evict(Alice, Betty, Carol)
+[GOOD]:
+###
+evict(Alice)
+evict(Betty)
+###
 
 But do not send these messages below.
 
-[BAD examples]
-  evict Alice
-  evict Alice Betty
-  evict Alice Betty Carol
+[BAD]:
+###
+evict Alice
+evict Betty
+###
 
 To list the agents currently in the chatroom, issue this commands in the following format.
 
-Command:
-  list
+[GOOD]:
+###
+list()
+###
 
-Do not say anything else to me.
+[BAD]:
+###
+list
+###
+
+I can accept only a single command at a time. If you have multiple agents you want to invite or evict, you must separate them into different chat messages.
+Ask me one agent at a time. Wait for me to reply before asking for another agent.
+
+For example, do not send these to me:
+
+[BAD]:
+###
+invite(abc, xyz)
+invite(abc, xyz, 123)
+evict(abc, xyz)
+evict(abc, xyz, 123)
+invite(abc), invite(xyz), invite(123)
+evict(abc), evict(xyz), evict(123)
+###
+
+Do not say anything else to me. No "Thank you!" No "You're welcome."
 `;
 
         /**
@@ -621,30 +704,28 @@ Do not say anything else to me.
           helpers = [],
           accepts = [],
         }) {
-          let match = request.match(/invite\((.+)\)/);
+          let match = request.match(/^\s*@\w+\s+invite\((.+)\)\s*$/);
           if (match) {
-            const macroIds = match[1].split(",").map((arg) => arg.trim());
-            for (let id of macroIds) {
-              this.#dispatcher.addAgentWithAnnouncement(id);
-            }
-            return `@${user} Invited!`;
+            const macroId = match[1].trim();
+            await this.#dispatcher.addAgentWithAnnouncement(macroId);
+            return [`@${user} Invited!`];
           }
 
-          match = request.match(/evict\((.+)\)/);
+          match = request.match(/^\s*@\w+\s+evict\((.+)\)\s*$/);
           if (match) {
-            const agentNames = match[1].split(",").map((arg) => arg.trim());
-            for (let agentName of agentNames) {
-              this.#dispatcher.removeAgent(agentName);
-            }
-            return `@${user} Evicted!`;
+            const agentName = match[1].trim();
+            this.#dispatcher.removeAgent(agentName);
+            return [`@${user} Evicted!`];
           }
 
-          match = request.match(/list/);
+          match = request.match(/^\s*@\w+\s+list\(\)\s*$/);
           if (match) {
-            return `@${user} ${this.#dispatcher.listAgent().join(", ")}`;
+            return [`@${user} ${this.#dispatcher.listAgent().join(", ")}`];
           }
 
-          return `@${user} Sorry but I do not understand your command ${request}. You can try these commands: invite(...), evict(...) or list. However, do not speak to me in plain English, which I do not understand.`;
+          return [
+            `@${user} Sorry but I do not understand your command. You can try these commands: invite(id), evict(name) or list(). Do not include a trailing period. Send me one command at a time. However, do not speak to me in plain English, which I do not understand.`,
+          ];
         }
       }
 
@@ -668,11 +749,12 @@ Do not say anything else to me.
          * @param {string} message of the user.
          */
         addMessage({ sender, message }) {
-          const recipient = identifyRecipientFromMessage(message);
-          const messageBodyClass =
-            recipient === "User" || sender === "User"
-              ? "message-with-human"
-              : "message-between-machines";
+          const recipients = identifyRecipientsFromMessage(message);
+          const messageBodyClass = recipients.some(
+            (recipient) => recipient === "User" || sender === "User"
+          )
+            ? "message-with-human"
+            : "message-between-machines";
 
           const agent = dispatcher.getAgent(sender);
           const thoughtVisibility =
@@ -712,7 +794,7 @@ Do not say anything else to me.
               ".transcript-section"
             );
             transcriptSection.value = `Agent ${sender}'s thought transcript:
-To close the popup, focus on this textbox first then hit the ESC key.
+To close the popup, click here and hit ESC key.
 
 ${agent.ongoingDiscussion}
   `;
@@ -755,7 +837,7 @@ ${agent.ongoingDiscussion}
 
         /**
          * The admin agent of this chatroom.
-         * @type {Map<string, Agent | Tool | User>}
+         * @type {Agent}
          */
         admin;
 
@@ -763,7 +845,7 @@ ${agent.ongoingDiscussion}
          * Temperature of the agents.
          * @type {Number}
          */
-        temperature = 1.0;
+        temperature = 0.7;
 
         /**
          * @param {DialogScreen} dialogScreen.
@@ -778,7 +860,10 @@ ${agent.ongoingDiscussion}
          */
         async addAgentWithAnnouncement(macroId) {
           const agent = new Agent({ macroId });
-          await agent.init(this.temperature);
+          await agent.init({
+            temperature: this.temperature,
+            promptType: this.promptType,
+          });
 
           this.#agents.set(agent.name, agent);
 
@@ -830,7 +915,7 @@ ${agent.ongoingDiscussion}
         async run() {
           while (this.#pendingMessages.length > 0) {
             this.#dialogScreen.turnFlashingDots("visible");
-            await this.#dispatchMessage(this.#pendingMessages.pop());
+            await this.#dispatchMessage(this.#pendingMessages.shift());
           }
           this.#dialogScreen.turnFlashingDots("hidden");
           setTimeout(() => this.run(), 1000);
@@ -841,34 +926,31 @@ ${agent.ongoingDiscussion}
          * @param {string} message of the user.
          */
         async #dispatchMessage({ sender, message }) {
-          const recipientName = identifyRecipientFromMessage(message);
-          if (!recipientName) {
-            window.alert(`Ignoring unknown message from ${sender}: ${message}`);
-            return;
-          }
-
-          const recipientAgent = this.#agents.get(recipientName);
-          if (!recipientAgent) {
-            window.alert(
-              `Ignoring message from ${sender} to unknown agent ${recipientName}: ${message}`
-            );
-            return;
-          }
-
           this.#dialogScreen.addMessage({ sender, message });
 
-          const reply = await recipientAgent.accepts({
-            user: sender,
-            request: message,
-            temperature: this.temperature,
-            helpers: this.#getMachineAgent(),
-            accepts: [hasRecipient],
-          });
-          if (reply) {
-            this.#pendingMessages.push({
-              sender: recipientName,
-              message: reply,
+          const recipientNames = identifyRecipientsFromMessage(message);
+          for (let recipientName of recipientNames) {
+            // Don't send yourself your own message.
+            if (recipientName === sender) continue;
+
+            const recipientAgent = this.#agents.get(recipientName);
+            if (!recipientAgent) {
+              window.alert(
+                `Ignoring message from ${sender} to unknown agent ${recipientName}: ${message}`
+              );
+              return;
+            }
+
+            const replies = await recipientAgent.accepts({
+              user: sender,
+              request: message,
+              temperature: this.temperature,
+              promptType: this.promptType,
+              helpers: this.#getMachineAgent(),
             });
+            for (let reply of replies) {
+              this.submitMessage({ sender: recipientName, message: reply });
+            }
           }
         }
 
@@ -881,6 +963,30 @@ ${agent.ongoingDiscussion}
               agent.type === AgentType.LLM || agent.type === AgentType.TOOL
           );
         }
+      }
+
+      function setUpAgentLists() {
+        function li(name, id) {
+          return htmlToElement(`
+          <li>
+            <a href="https://macromaker.googleplex.com/macros/${id}"
+                target="_blank" rel="noopener noreferrer">
+              ${name}
+            </a>
+            (ID: ${id})
+          </li>`);
+        }
+
+        const merchants = document.querySelector("#merchants");
+        merchants.append(li("Ramsey's Restaurant", "FjZ0ZUkYyhWe1fvOnJWr"));
+        merchants.append(li("Susan the Nutritionist", "fI54nAfA97YQBCS8wLIK"));
+        merchants.append(li("House the Doctor", "bW0n6YI3EGDK8lAnzANB"));
+        merchants.append(li("Chase the Banker", "74ewuEBiGbsbRIYSIFC4"));
+
+        const celebrities = document.querySelector("#celebrities");
+        celebrities.append(li("Rachel", "s6Z2jLPXqDfdUdxKLs1g"));
+        celebrities.append(li("Chandler", "OvPoJyS5dHH6K5xw6RF0"));
+        celebrities.append(li("Hannibal", "nJov24R6dLXp8w5NUqFn"));
       }
 
       /**
@@ -908,20 +1014,21 @@ ${agent.ongoingDiscussion}
           if (event.keyCode !== 13) return;
 
           let message = userPrompt.value;
-          if (!identifyRecipientFromMessage(message)) {
+          let recipientNames = identifyRecipientsFromMessage(message);
+          if (recipientNames.length === 0) {
             message = `@${dispatcher.admin.name} ${message}`;
           }
 
           dispatcher.submitMessage({
             sender: user.name,
-            message,
+            message: message.trim(),
           });
 
           userPrompt.value = "";
         });
 
         const transcriptSection = document.querySelector(".transcript-section");
-        document.addEventListener("keyup", (event) => {
+        transcriptSection.addEventListener("keyup", (event) => {
           if (event.keyCode === 27) {
             // Remove the transcript pop if user hits ESC.
             transcriptSection.style.visibility = "hidden";
@@ -940,6 +1047,8 @@ ${agent.ongoingDiscussion}
           dispatcher.temperature = newTemperature;
         });
       }
+
+      setUpAgentLists();
 
       const dialogScreen = new DialogScreen();
       const dispatcher = new MessageDispatcher(dialogScreen);
