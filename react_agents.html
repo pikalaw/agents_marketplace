@@ -307,7 +307,7 @@ Follow the following format:
 """
 {FROM:User}: @You A request from the user.
 {THOUGHT}: Your thought on the user's request. Think one step at time. What do yo know already that is useful? What don't you know yet that you need to know? Do you have enough information to handle the request? What can you do as the next step?
-{SEND}: @User Your response to the request from the user.
+{SEND}: @User What you will do as the next step.
 """
 
 Example:
@@ -401,6 +401,13 @@ These examples below are bad:
 {SEND}: @User Zelda, your friend!
 {SEND}: @User I am Zelda.
 {SEND}: @User Zelda
+"""
+
+Do not have empty thoughts:
+
+[BAD]
+"""
+{THOUGHT}:
 """
 
 You can only call agents who are in the same chatroom as you.
