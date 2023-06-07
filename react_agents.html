@@ -258,6 +258,10 @@
         return [...matches].map((match) => match[1]);
       }
 
+      function hasRecipientsInMessage(message) {
+        return identifyRecipientsFromMessage(message).length > 0;
+      }
+
       /**
        * @param {Agent} agent helper.
        * @returns {string} the full prompt for the helper.
@@ -947,6 +951,7 @@ ${agent.ongoingDiscussion}
               temperature: this.temperature,
               promptType: this.promptType,
               helpers: this.#getMachineAgent(),
+              accepts: [hasRecipientsInMessage],
             });
             for (let reply of replies) {
               this.submitMessage({ sender: recipientName, message: reply });
@@ -1014,8 +1019,7 @@ ${agent.ongoingDiscussion}
           if (event.keyCode !== 13) return;
 
           let message = userPrompt.value;
-          let recipientNames = identifyRecipientsFromMessage(message);
-          if (recipientNames.length === 0) {
+          if (!hasRecipientsInMessage(message)) {
             message = `@${dispatcher.admin.name} ${message}`;
           }
 
