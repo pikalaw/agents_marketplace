@@ -432,7 +432,7 @@ Problem communicating with MacroMaker:
 
 ${error.message}
 
-You may need to wait a bit and refresh the browser. Sorry!
+You may need to refresh your credentials and refresh the browser. Sorry!
 `);
           throw error;
         }
@@ -753,7 +753,7 @@ Do not say anything else to me. No "Thank you!" No "You're welcome."
 
       function addHighLight(message) {
         return message.replace(
-          /@[A-Za-z0-9\-\_]+/,
+          /@[A-Za-z0-9\-\_]+/g,
           (match) => `<span class="recipient">${match}</span>`
         );
       }
