@@ -161,21 +161,19 @@
           you based on your preferences.
         </p>
         <p>
-          These merchants are already in the chatroom with you.
-          Bob should work with them to accomplish your goals.
+          These merchants are already in the chatroom with you. Bob should work
+          with them to accomplish your goals.
         </p>
         <ul id="merchants"></ul>
         <p>
-          These are your friends's agents.
-          They are not initially in the chatroom.
-          However, you can ask Bob to invite them to the chat.
+          These are your friends's agents. They are not initially in the
+          chatroom. However, you can ask Bob to invite them to the chat.
         </p>
         <ul id="celebrities"></ul>
         <p>
-          If your message has one or more <strong>@[agent name]</strong>,
-          that message will be sent to those agents.
-          If your message does not have such token,
-          you will be speaking with Bob.
+          If your message has one or more <strong>@[agent name]</strong>, that
+          message will be sent to those agents. If your message does not have
+          such token, you will be speaking with Bob.
         </p>
         <p>Some ideas to try:</p>
         <ul>
@@ -198,7 +196,7 @@
       </section>
       <section class="user-prompt-section">
         <textarea
-          class="user-prompt"
+          class="user-prompt user-input"
           name="user-prompt"
           rows="4"
           placeholder="Use @agent to talk to an agent directly or leave it out to talk to Bob."
@@ -206,7 +204,13 @@
         <div class="model-control">
           <div class="temperature-control">
             <label for="temperature-slider">Temperature:</label>
-            <input type="range" min="0" max="10" id="temperature-slider" />
+            <input
+              type="range"
+              min="0"
+              max="10"
+              class="user-input"
+              id="temperature-slider"
+            />
             <div class="input-text" id="temperature-text"></div>
           </div>
           <p class="send-feedback">
@@ -495,14 +499,14 @@ You may need to refresh your credentials and refresh the browser. Sorry!
                 }
               },
             ],
-          }).then(messages => stripRecipientFromMessage(messages[0]));
+          }).then((messages) => stripRecipientFromMessage(messages[0]));
 
           const selfIntroductionPromise = this.accepts({
             user: SYSTEM,
             request:
               "Tell me your profession and give me a comprehension description of what you can do.",
             temperature,
-          }).then(messages => stripRecipientFromMessage(messages[0]));
+          }).then((messages) => stripRecipientFromMessage(messages[0]));
 
           const [name, selfIntroduction] = await Promise.all([
             namePromise,
@@ -567,8 +571,12 @@ You may need to refresh your credentials and refresh the browser. Sorry!
                 .slice(1)
                 .map((m) => m.trim());
 
-              if (replies.length === 0 || replies.some((reply) =>
-                  accepts.some((acceptFn) => !acceptFn(reply)))) {
+              if (
+                replies.length === 0 ||
+                replies.some((reply) =>
+                  accepts.some((acceptFn) => !acceptFn(reply))
+                )
+              ) {
                 // If this message does not match expected format, try the next
                 // message.
                 continue;
@@ -764,6 +772,15 @@ Do not say anything else to me. No "Thank you!" No "You're welcome."
       }
 
       class DialogScreen {
+        /**
+         * @param {boolean} enabled if the input should be enabled for user.
+         */
+        setUserInput({ enabled }) {
+          document.querySelectorAll(".user-input").forEach((e) => {
+            e.disabled = !enabled;
+          });
+        }
+
         /**
          * @param {string} user ID of the sender.
          * @param {string} message of the user.
@@ -1080,9 +1097,13 @@ ${agent.ongoingDiscussion}
       setUpAgentLists();
 
       const dialogScreen = new DialogScreen();
+      dialogScreen.setUserInput({ enable: false });
+
       const dispatcher = new MessageDispatcher(dialogScreen);
       await setUpInitialAgents(dispatcher);
+
       setUpEventHandlers(dispatcher);
+      dialogScreen.setUserInput({ enabled: true });
       await dispatcher.run();
     })();
   </script>
