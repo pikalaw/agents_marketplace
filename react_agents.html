@@ -1022,12 +1022,15 @@ ${agent.ongoingDiscussion}
         merchants.append(li("Susan the Nutritionist", "fI54nAfA97YQBCS8wLIK"));
         merchants.append(li("House the Doctor", "bW0n6YI3EGDK8lAnzANB"));
         merchants.append(li("Chase the Banker", "74ewuEBiGbsbRIYSIFC4"));
+        merchants.append(
+          li("Hannibal the Psychiatrist", "nJov24R6dLXp8w5NUqFn")
+        );
 
         const celebrities = document.querySelector("#celebrities");
         celebrities.append(li("Rachel", "s6Z2jLPXqDfdUdxKLs1g"));
         celebrities.append(li("Chandler", "OvPoJyS5dHH6K5xw6RF0"));
-        celebrities.append(li("Hannibal", "nJov24R6dLXp8w5NUqFn"));
         celebrities.append(li("Saul", "ZS4J9y7VkLnRcd4uVTzK"));
+        celebrities.append(li("Daenerys", "Zvo7knT52XjZ3uNShXhm"));
       }
 
       /**
@@ -1040,10 +1043,13 @@ ${agent.ongoingDiscussion}
         );
 
         // Merchants.
-        await dispatcher.addAgentWithAnnouncement("FjZ0ZUkYyhWe1fvOnJWr");
-        await dispatcher.addAgentWithAnnouncement("fI54nAfA97YQBCS8wLIK");
-        await dispatcher.addAgentWithAnnouncement("bW0n6YI3EGDK8lAnzANB");
-        await dispatcher.addAgentWithAnnouncement("74ewuEBiGbsbRIYSIFC4");
+        await Promise.all([
+          dispatcher.addAgentWithAnnouncement("FjZ0ZUkYyhWe1fvOnJWr"),
+          dispatcher.addAgentWithAnnouncement("fI54nAfA97YQBCS8wLIK"),
+          dispatcher.addAgentWithAnnouncement("bW0n6YI3EGDK8lAnzANB"),
+          dispatcher.addAgentWithAnnouncement("74ewuEBiGbsbRIYSIFC4"),
+          dispatcher.addAgentWithAnnouncement("nJov24R6dLXp8w5NUqFn"),
+        ]);
 
         // Tools.
         dispatcher.addAgentSilently(new RoomService(dispatcher));
