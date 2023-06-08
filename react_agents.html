@@ -403,13 +403,6 @@ These examples below are bad:
 {SEND}: @User Zelda
 """
 
-Do not have empty thoughts:
-
-[BAD]
-"""
-{THOUGHT}:
-"""
-
 You can only call agents who are in the same chatroom as you.
 Do not ask any other agent who is not in the chatroom!
 The following agents below are in the same chatroom as you.
@@ -572,11 +565,12 @@ You may need to refresh your credentials and refresh the browser. Sorry!
                 ""
               );
               // The first element would be everything before the first {SEND}:
-              // So, we skip that one.
+              // So, we skip that one. Also skip messages that have no text.
               const replies = noHallucinationResponse
                 .split("{SEND}:")
                 .slice(1)
-                .map((m) => m.trim());
+                .map((m) => m.trim())
+                .filter((m) => m.length > 0);
 
               if (
                 replies.length === 0 ||
@@ -838,7 +832,7 @@ Do not say anything else to me. No "Thank you!" No "You're welcome."
               ".transcript-section"
             );
             transcriptSection.value = `Agent ${sender}'s thought transcript:
-To close the popup, click here and hit ESC key.
+To close the popup, click inside this textbox and hit the ESC key.
 
 ${agent.ongoingDiscussion}
   `;
